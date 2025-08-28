@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/BelikovArtem/chego"
+	"github.com/treepeck/chego"
 )
 
 // result information will be printed is the perft is executed with the

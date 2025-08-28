@@ -1,5 +1,5 @@
 [![License: MPL 2.0](https://img.shields.io/badge/License-MPL%202.0-brightgreen.svg)](https://opensource.org/licenses/MPL-2.0)
-[![Go Reference](https://pkg.go.dev/badge/github.com/BelikovArtem/chego.svg)](https://pkg.go.dev/github.com/BelikovArtem/chego)
+[![Go Reference](https://pkg.go.dev/badge/github.com/treepeck/chego.svg)](https://pkg.go.dev/github.com/treepeck/chego)
 
 Chego implements chessboard state management and legal move generation.
 
@@ -15,7 +15,7 @@ hence it does not provide any GUI or CLI.
 To install chego, run `go get`:
 
 ```
-go get github.com/BelikovArtem/chego
+go get github.com/treepeck/chego
 ```
 
 Here is a simple example: 
@@ -26,7 +26,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/BelikovArtem/chego"
+	"github.com/treepeck/chego"
 )
 
 func main() {
@@ -52,7 +52,7 @@ First install the Go compiler version 1.24.1 or newer (see https://go.dev/dl).
 Once the compiler is installed, clone this repository:
 
 ```
-git clone https://github.com/BelikovArtem/chego
+git clone https://github.com/treepeck/chego
 cd chego
 ```
 
