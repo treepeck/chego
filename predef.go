@@ -8,7 +8,6 @@ package chego
 var (
 	// bishopMagicNumbers is a precalculated lookup table of magic
 	// numbers for a bishop.
-	// See commit c0cfb607e20a1e469d2fc94b26146645bc1fc9a1 for details.
 	bishopMagicNumbers = [64]uint64{
 		0x11410121040100,
 		0x2084820928010,
@@ -77,7 +76,6 @@ var (
 	}
 	// rookMagicNumbers is a precalculated lookup table of magic
 	// numbers for a rook.
-	// See commit c0cfb607e20a1e469d2fc94b26146645bc1fc9a1 for details.
 	rookMagicNumbers = [64]uint64{
 		0x2080008040002010,
 		0x40200010004000,
@@ -196,6 +194,8 @@ var (
 	castlingAttackPath = [4]uint64{
 		0x70, 0x1C, 0x7000000000000000, 0x1C00000000000000,
 	}
+	// Each square file used in san.go.
+	files = [8]byte{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'}
 )
 
 const InitialPos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
