@@ -21,15 +21,13 @@ SAN string consists of these parts:
  5. Denotation of check by '+'. Omitted when the move is a checkmate;
  6. Denotation of checkmate by '#'.
 
+NOTE: The caller is responsible for denoting checks and checkmates.  Copying the
+board state before each move is expensive, so SAN is encoded without check or
+checkmate symbols, which should be appended later by the caller.
+
 King castling and queen castling are encoded as "O-O" and "O-O-O" respectively.
 */
-func Move2SAN(
-	m Move,
-	pos *Position,
-	legalMoves MoveList,
-	p Piece,
-	isCapture, isCheck, isCheckmate bool,
-) string {
+func move2SAN(m Move, pos *Position, lm MoveList, p Piece, isCapture bool) string {
 	if m.Type() == MoveCastling {
 		if m.To() == SA1 || m.To() == SA8 {
 			return "O-O-O"
@@ -57,11 +55,11 @@ func Move2SAN(
 	// Resolve the ambiguity if needed.  Skip the pawns since their moves are
 	// always ambiguous.
 	if p > PieceBPawn {
-		for i := range legalMoves.LastMoveIndex {
-			if pos.GetPieceFromSquare(1<<legalMoves.Moves[i].From()) == p &&
-				legalMoves.Moves[i].To() == m.To() &&
-				legalMoves.Moves[i].From() != m.From() {
-				b.WriteByte(disambiguate(m.From(), legalMoves.Moves[i].From()))
+		for i := range lm.LastMoveIndex {
+			if pos.GetPieceFromSquare(1<<lm.Moves[i].From()) == p &&
+				lm.Moves[i].To() == m.To() &&
+				lm.Moves[i].From() != m.From() {
+				b.WriteByte(disambiguate(m.From(), lm.Moves[i].From()))
 				break
 			}
 		}
@@ -89,12 +87,6 @@ func Move2SAN(
 		case PromotionQueen:
 			b.WriteString("=Q")
 		}
-	}
-
-	if isCheckmate {
-		b.WriteByte('#')
-	} else if isCheck {
-		b.WriteByte('+')
 	}
 
 	return b.String()

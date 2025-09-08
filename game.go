@@ -37,6 +37,8 @@ type CompletedMove struct {
 	// Board state after completing the move to enable move undo and
 	// state restoration.
 	FenString string
+	// Human-readably move representation.
+	SAN string
 	// Move itself.
 	Move Move
 	// Remaining time on a player's clock in seconds.
@@ -67,20 +69,23 @@ func NewGame() *Game {
 }
 
 /*
-PushMove updates the game state by performing the specified move.  It is a
-caller responsibility to check if the specified move is legal.  Generates
+PushMove updates the game state by performing the specified move.  It's a
+caller's responsibility to check if the specified move is legal.  Generates
 legal moves for the next turn.
 */
 func (g *Game) PushMove(m Move) {
 	moved := g.Position.GetPieceFromSquare(1 << m.From())
 	captured := g.Position.GetPieceFromSquare(1 << m.To())
+	isCapture := captured != PieceNone
+
+	san := move2SAN(m, &g.Position, g.LegalMoves, moved, isCapture)
 
 	g.Position.MakeMove(m)
 
 	// Memorize the captured piece and clear the repetitions
 	// map after applying irreversible moves.
 	// See https://www.chessprogramming.org/Irreversible_Moves
-	if captured != PieceNone {
+	if isCapture {
 		g.Captured = append(g.Captured, captured)
 		clear(g.Repetitions)
 	} else if m.Type() == MoveCastling || m.Type() == MovePromotion ||
@@ -94,21 +99,13 @@ func (g *Game) PushMove(m Move) {
 		tl = g.BlackTime
 	}
 
-	// Store the completed move.
-	g.MoveStack = append(g.MoveStack, CompletedMove{
-		Move:      m,
-		FenString: SerializeFEN(g.Position),
-		TimeLeft:  tl,
-	})
-
 	// Generate legal moves for the next turn.
 	GenLegalMoves(g.Position, &g.LegalMoves)
 
-	// Is the en passant capture is not possible, clear the en passant
-	// target, since it can break the threefold-repetition detection
-	// by corrupting the Zobrist hash.
-	// See [IsThreefoldRepetition] commentary
 	ep := 0
+	// Is the en passant capture is not possible, clear the en passant target,
+	// since it can break the threefold-repetition detection by corrupting the
+	// Zobrist hash.  See [IsThreefoldRepetition] commentary.
 	for i := range g.LegalMoves.LastMoveIndex {
 		if g.LegalMoves.Moves[i].Type() == MoveEnPassant {
 			ep = g.Position.EPTarget
@@ -118,6 +115,26 @@ func (g *Game) PushMove(m Move) {
 
 	// Add repetition key to detect repetitions.
 	g.Repetitions[zobristKey(g.Position)]++
+
+	// The move is check if the king is under attack.
+	isCheck := genAttacks(g.Position.Bitboards, g.Position.ActiveColor)&
+		g.Position.Bitboards[PieceWKing+(1^g.Position.ActiveColor)] != 0
+
+	if isCheck && g.LegalMoves.LastMoveIndex == 0 {
+		// If the move results in checkmate, append the '#' symbol to the SAN.
+		san += "#"
+	} else if isCheck {
+		// If the move results in check, append the '+' symbol to the SAN.
+		san += "+"
+	}
+
+	// Store the completed move.
+	g.MoveStack = append(g.MoveStack, CompletedMove{
+		Move:      m,
+		SAN:       san,
+		FenString: SerializeFEN(g.Position),
+		TimeLeft:  tl,
+	})
 }
 
 /*

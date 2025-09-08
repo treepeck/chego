@@ -2,6 +2,8 @@ package chego
 
 import "testing"
 
+// TestMove2SAN does not cover check or checkmate denotations.  See the
+// [Move2SAN] commentary.
 func TestMove2SAN(t *testing.T) {
 	testcases := []struct {
 		move                            Move
@@ -31,7 +33,7 @@ func TestMove2SAN(t *testing.T) {
 			ParseFEN("2k5/Qr6/Q7/8/8/8/8/3R4 w - - 0 1"),
 			PieceWQueen,
 			true, true, true,
-			"Q6xb7#",
+			"Q6xb7",
 		},
 		{
 			NewPromotionMove(SE8, SD7, PromotionQueen),
@@ -52,14 +54,14 @@ func TestMove2SAN(t *testing.T) {
 			ParseFEN("8/8/8/4p3/3P4/2K5/8/8 b - - 0 1"),
 			PieceBPawn,
 			true, true, false,
-			"exd4+",
+			"exd4",
 		},
 		{
 			NewMove(SE7, SF7, MoveNormal),
 			ParseFEN("r1bk3r/ppqpbQpp/2p4n/6B1/2BpP3/3P1P2/PPP3PP/RN3RK1 w - - 0 1"),
 			PieceWQueen,
 			true, true, true,
-			"Qxe7#",
+			"Qxe7",
 		},
 	}
 
@@ -67,8 +69,8 @@ func TestMove2SAN(t *testing.T) {
 		var legalMoves MoveList
 		GenLegalMoves(tc.pos, &legalMoves)
 
-		got := Move2SAN(tc.move, &tc.pos, legalMoves, tc.piece,
-			tc.isCapture, tc.isCheck, tc.isCheckmate)
+		got := move2SAN(tc.move, &tc.pos, legalMoves, tc.piece,
+			tc.isCapture)
 		if got != tc.expected {
 			t.Fatalf("expected: %s, got: %s", tc.expected, got)
 		}
@@ -81,12 +83,12 @@ func BenchmarkMove2SAN(b *testing.B) {
 	GenLegalMoves(pos, &legalMoves)
 
 	for b.Loop() {
-		Move2SAN(
+		move2SAN(
 			NewMove(SE7, SF7, MoveNormal),
 			&pos,
 			legalMoves,
 			PieceWQueen,
-			true, true, true,
+			true,
 		)
 	}
 }
