@@ -36,9 +36,9 @@ type Game struct {
 type CompletedMove struct {
 	// Board state after completing the move to enable move undo and
 	// state restoration.
-	FenString string
+	Fen string
 	// Human-readably move representation.
-	SAN string
+	San string
 	// Move itself.
 	Move Move
 	// Remaining time on a player's clock in seconds.
@@ -130,10 +130,10 @@ func (g *Game) PushMove(m Move) {
 
 	// Store the completed move.
 	g.MoveStack = append(g.MoveStack, CompletedMove{
-		Move:      m,
-		SAN:       san,
-		FenString: SerializeFEN(g.Position),
-		TimeLeft:  tl,
+		Move:     m,
+		San:      san,
+		Fen:      SerializeFEN(g.Position),
+		TimeLeft: tl,
 	})
 }
 
@@ -154,7 +154,7 @@ func (g *Game) PopMove() {
 
 	if len(g.MoveStack) == 0 { // No moves left.
 		// Restore position.
-		p := ParseFEN(g.MoveStack[len(g.MoveStack)-1].FenString)
+		p := ParseFEN(g.MoveStack[len(g.MoveStack)-1].Fen)
 		g.Position = p
 		// Restore time on the player timers.
 		// Since there are no more completed moves, to restore the initial
@@ -163,12 +163,12 @@ func (g *Game) PopMove() {
 	} else if len(g.MoveStack)%2 == 0 {
 		// White player has moved.
 		last := g.MoveStack[len(g.MoveStack)-1]
-		g.Position = ParseFEN(last.FenString)
+		g.Position = ParseFEN(last.Fen)
 		g.WhiteTime = last.TimeLeft
 	} else {
 		// Black player has moved.
 		last := g.MoveStack[len(g.MoveStack)-1]
-		g.Position = ParseFEN(last.FenString)
+		g.Position = ParseFEN(last.Fen)
 		g.BlackTime = last.TimeLeft
 	}
 
