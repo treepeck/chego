@@ -2,13 +2,16 @@
 
 package chego
 
-import "time"
-
 /*
 Game represents a single chess game state.
 
-Make sure to call [InitAttackTables] and [InitZobristKeys] ONCE before creating
-a [Game].
+It is the user's responsibility to manage time ticks and decrement the players'
+time values.  The value of TimeBonus is added to the time values after each
+completed move, so the user must ensure that time ticks and moves are not
+handled concurrently (use channels to prevent race conditions).
+
+NOTE: Call [InitAttackTables] and [InitZobristKeys] ONCE before creating a
+[Game].
 */
 type Game struct {
 	LegalMoves MoveList
@@ -19,17 +22,13 @@ type Game struct {
 	// Keep track of all repeated Zobrist keys to detect
 	// a threefold repetition.
 	Repetitions map[uint64]int
-	// Remaining time on a white player's clock in seconds.  0 by default.
+	// Remaining time on a white player's clock in seconds.
 	WhiteTime int
-	// Remaining time on a black player's clock in seconds.  0 by default.
+	// Remaining time on a black player's clock in seconds.
 	BlackTime int
 	// Number of seconds added to player's clock after completing a move.
 	TimeBonus int
-	// Clock will send a tick signal every second.  By default the Clock is
-	// stopped.  The caller should call SetClock to apply the time limit
-	// for a game.
-	Clock  *time.Ticker
-	Result Result
+	Result    Result
 }
 
 // CompletedMove represents a completed move.
@@ -54,10 +53,7 @@ func NewGame() *Game {
 		MoveStack:   make([]CompletedMove, 0, 15),
 		Repetitions: make(map[uint64]int),
 		Captured:    make([]Piece, 0, 15),
-		Clock:       time.NewTicker(time.Second),
 	}
-
-	g.Clock.Stop()
 
 	g.Position = ParseFEN(InitialPos)
 
@@ -258,30 +254,6 @@ func (g *Game) IsMoveLegal(m Move) bool {
 		}
 	}
 	return false
-}
-
-/*
-SetClock initializes each player’s clock with timeControl and starts it.
-After every completed move, timeBonus seconds are added to the player’s clock.
-*/
-func (g *Game) SetClock(timeControl, timeBonus int) {
-	g.WhiteTime = timeControl
-	g.BlackTime = timeControl
-	g.TimeBonus = timeBonus
-	g.Clock.Reset(time.Second)
-}
-
-/*
-TimeTick decrements the clock value of the currently active player in response
-to ticks from the [Clock].  It is the caller's responsibility to listen to tick
-events and end the game if one of the players runs out of time.
-*/
-func (g *Game) TimeTick() {
-	if g.Position.ActiveColor == ColorWhite {
-		g.WhiteTime--
-	} else {
-		g.BlackTime--
-	}
 }
 
 /*
