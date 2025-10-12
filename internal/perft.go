@@ -47,9 +47,13 @@ func perft(p chego.Position, depth int) int {
 	}
 
 	var prev chego.Position
+	var moved, captured chego.Piece
+
 	for i := range l.LastMoveIndex {
 		prev = p
-		p.MakeMove(l.Moves[i])
+		moved = p.GetPieceFromSquare(1 << l.Moves[i].From())
+		captured = p.GetPieceFromSquare(1 << l.Moves[i].To())
+		p.MakeMove(l.Moves[i], moved, captured)
 
 		nodes += perft(p, depth-1)
 
@@ -76,13 +80,17 @@ func perftVerbose(p chego.Position, depth int, r *result, isRoot bool) int {
 
 	c := p.ActiveColor
 	var prev chego.Position
+	var moved, captured chego.Piece
+
 	for i := range l.LastMoveIndex {
 		if p.GetPieceFromSquare(1<<l.Moves[i].To()) != chego.PieceNone {
 			r.captures++
 		}
 
 		prev = p
-		p.MakeMove(l.Moves[i])
+		moved = p.GetPieceFromSquare(1 << l.Moves[i].From())
+		captured = p.GetPieceFromSquare(1 << l.Moves[i].To())
+		p.MakeMove(l.Moves[i], moved, captured)
 
 		cnt := chego.GenChecksCounter(p.Bitboards, 1^c)
 		if cnt > 0 {

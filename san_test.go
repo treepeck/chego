@@ -69,7 +69,7 @@ func TestMove2SAN(t *testing.T) {
 		var legalMoves MoveList
 		GenLegalMoves(tc.pos, &legalMoves)
 
-		got := move2SAN(tc.move, &tc.pos, legalMoves, tc.piece,
+		got := move2SAN(tc.move, tc.pos, legalMoves, tc.piece,
 			tc.isCapture)
 		if got != tc.expected {
 			t.Fatalf("expected: %s, got: %s", tc.expected, got)
@@ -85,7 +85,7 @@ func BenchmarkMove2SAN(b *testing.B) {
 	for b.Loop() {
 		move2SAN(
 			NewMove(SE7, SF7, MoveNormal),
-			&pos,
+			pos,
 			legalMoves,
 			PieceWQueen,
 			true,

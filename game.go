@@ -2,121 +2,110 @@
 
 package chego
 
+import "time"
+
 /*
-Game represents a single chess game state.
+Game represents a game state that can be converted to or parsed from the PGN
+string.
 
-It is the user's responsibility to manage time ticks and decrement the players'
-time values.  The value of TimeBonus is added to the time values after each
-completed move, so the user must ensure that time ticks and moves are not
-handled concurrently (use channels to prevent race conditions).
+It's the user's responsibility to spin up a time.Ticker and handle time ticks
+by calling the [DecrementTime] function.  The value of timeBonus is added to
+the player's timer during the [PushMove] function, so the user must ensure that
+time ticks and moves are not handled concurrently (prevent race conditions).
 
-NOTE: Call [InitAttackTables] and [InitZobristKeys] ONCE before creating a
-[Game].
+NOTE: Call [InitAttackTables] and [InitZobristKeys] ONCE before using a [Game].
 */
 type Game struct {
-	LegalMoves MoveList
-	Position   Position
-	MoveStack  []CompletedMove
-	// Keep track of all captured pieces.
-	Captured []Piece
-	// Keep track of all repeated Zobrist keys to detect
-	// a threefold repetition.
-	Repetitions map[uint64]int
-	// Remaining time on a white player's clock in seconds.
-	WhiteTime int
-	// Remaining time on a black player's clock in seconds.
-	BlackTime int
-	// Number of seconds added to player's clock after completing a move.
-	TimeBonus int
-	Result    Result
+	legalMoves     MoveList
+	position       Position
+	completedMoves []CompletedMove
+	// Repetition keys are stored as a map of Zobrist keys to the number of
+	// times each position has occurred.
+	repetitions map[uint64]int
+	Date        time.Time
+	Event       string
+	Site        string
+	White       string
+	Black       string
+	Result      Result
+	Termination Termination
+	whiteTime   int
+	blackTime   int
+	timeBonus   int
 }
 
-// CompletedMove represents a completed move.
-type CompletedMove struct {
-	// Board state after completing the move to enable move undo and
-	// state restoration.
-	Fen string
-	// Human-readably move representation.
-	San string
-	// Move itself.
-	Move Move
-	// Remaining time on a player's clock in seconds.
-	TimeLeft int
-}
-
-/*
-NewGame creates a new game initialized with the default chess position.
-Generates legal moves.
-*/
 func NewGame() *Game {
 	g := &Game{
-		MoveStack:   make([]CompletedMove, 0, 15),
-		Repetitions: make(map[uint64]int),
-		Captured:    make([]Piece, 0, 15),
+		position:       ParseFEN(InitialPos),
+		repetitions:    make(map[uint64]int, 1),
+		completedMoves: make([]CompletedMove, 0),
+		Date:           time.Now(),
+		Result:         ResultUnknown,
+		Termination:    TerminationUnterminated,
 	}
 
-	g.Position = ParseFEN(InitialPos)
+	GenLegalMoves(g.position, &g.legalMoves)
 
-	GenLegalMoves(g.Position, &g.LegalMoves)
+	// Initialize the initial Zobrist key.
+	g.repetitions[zobristKey(g.position)] = 1
 
-	// Add initial repetition key.
-	g.Repetitions[zobristKey(g.Position)]++
 	return g
 }
 
 /*
 PushMove updates the game state by performing the specified move.  It's a
-caller's responsibility to check if the specified move is legal.  Generates
-legal moves for the next turn.
+caller's responsibility to ensure that the specified move is legal.  This
+function also generates legal moves for the next player.
+
+PushMove is not safe for concurrent use.
 */
 func (g *Game) PushMove(m Move) {
-	moved := g.Position.GetPieceFromSquare(1 << m.From())
-	captured := g.Position.GetPieceFromSquare(1 << m.To())
+	moved := g.position.GetPieceFromSquare(1 << m.From())
+	captured := g.position.GetPieceFromSquare(1 << m.To())
 	isCapture := captured != PieceNone
 
-	san := move2SAN(m, &g.Position, g.LegalMoves, moved, isCapture)
+	// Encode the move in the Standard Algebraic Notation.  Note that the check
+	// and checkmate sybmols must be added later.
+	san := move2SAN(m, g.position, g.legalMoves, moved, isCapture)
 
-	g.Position.MakeMove(m)
+	g.position.MakeMove(m, moved, captured)
 
-	// Memorize the captured piece and clear the repetitions
-	// map after applying irreversible moves.
+	// Clear the repetitions map after applying the irreversable move.
 	// See https://www.chessprogramming.org/Irreversible_Moves
-	if isCapture {
-		g.Captured = append(g.Captured, captured)
-		clear(g.Repetitions)
-	} else if m.Type() == MoveCastling || m.Type() == MovePromotion ||
+	if isCapture || m.Type() == MoveCastling || m.Type() == MovePromotion ||
 		moved <= PieceBPawn {
-		clear(g.Repetitions)
+		clear(g.repetitions)
 	}
 
 	// Store the clock value.
-	tl := g.WhiteTime
+	timeLeft := g.whiteTime
 	if moved%2 != 0 {
-		tl = g.BlackTime
+		timeLeft = g.blackTime
 	}
 
 	// Generate legal moves for the next turn.
-	GenLegalMoves(g.Position, &g.LegalMoves)
+	GenLegalMoves(g.position, &g.legalMoves)
 
+	// Clear en passant target square after each completed move.
 	ep := 0
-	// Is the en passant capture is not possible, clear the en passant target,
+	// If the en passant capture is not possible, clear the en passant target,
 	// since it can break the threefold-repetition detection by corrupting the
-	// Zobrist hash.  See [IsThreefoldRepetition] commentary.
-	for i := range g.LegalMoves.LastMoveIndex {
-		if g.LegalMoves.Moves[i].Type() == MoveEnPassant {
-			ep = g.Position.EPTarget
+	// Zobrish hash.  See [IsThreefoldRepetition] function commentary.
+	for i := range g.legalMoves.LastMoveIndex {
+		if g.legalMoves.Moves[i].Type() == MoveEnPassant {
+			ep = g.position.EPTarget
 		}
 	}
-	g.Position.EPTarget = ep
+	g.position.EPTarget = ep
 
-	// Add repetition key to detect repetitions.
-	g.Repetitions[zobristKey(g.Position)]++
+	// Increment the repitition key entry.
+	g.repetitions[zobristKey(g.position)]++
 
-	// The move is check if the king is under attack.
-	isCheck := genAttacks(g.Position.Bitboards, g.Position.ActiveColor)&
-		g.Position.Bitboards[PieceWKing+(1^g.Position.ActiveColor)] != 0
+	// The move is check if the opponent's king is under attack.
+	isCheck := genAttacks(g.position.Bitboards, g.position.ActiveColor)&
+		g.position.Bitboards[PieceWKing+(1^g.position.ActiveColor)] != 0
 
-	if isCheck && g.LegalMoves.LastMoveIndex == 0 {
+	if isCheck && g.legalMoves.LastMoveIndex == 0 {
 		// If the move results in checkmate, append the '#' symbol to the SAN.
 		san += "#"
 	} else if isCheck {
@@ -125,57 +114,16 @@ func (g *Game) PushMove(m Move) {
 	}
 
 	// Store the completed move.
-	g.MoveStack = append(g.MoveStack, CompletedMove{
-		Move:     m,
+	g.completedMoves = append(g.completedMoves, CompletedMove{
 		San:      san,
-		Fen:      SerializeFEN(g.Position),
-		TimeLeft: tl,
+		TimeLeft: timeLeft,
 	})
-}
-
-/*
-PopMove pops the last completed move and restores the game state.
-If there are no completed moves, this function is no-op.
-*/
-func (g *Game) PopMove() {
-	if len(g.MoveStack) == 0 {
-		return
-	}
-
-	// Decrement repetition key.
-	g.Repetitions[zobristKey(g.Position)]--
-
-	// Pop move from the stack.
-	g.MoveStack = g.MoveStack[:len(g.MoveStack)-1]
-
-	if len(g.MoveStack) == 0 { // No moves left.
-		// Restore position.
-		p := ParseFEN(g.MoveStack[len(g.MoveStack)-1].Fen)
-		g.Position = p
-		// Restore time on the player timers.
-		// Since there are no more completed moves, to restore the initial
-		// clock values just assign a WhiteTime to a BlackTime.
-		g.WhiteTime = g.BlackTime
-	} else if len(g.MoveStack)%2 == 0 {
-		// White player has moved.
-		last := g.MoveStack[len(g.MoveStack)-1]
-		g.Position = ParseFEN(last.Fen)
-		g.WhiteTime = last.TimeLeft
-	} else {
-		// Black player has moved.
-		last := g.MoveStack[len(g.MoveStack)-1]
-		g.Position = ParseFEN(last.Fen)
-		g.BlackTime = last.TimeLeft
-	}
-
-	// Restore legal moves.
-	GenLegalMoves(g.Position, &g.LegalMoves)
 }
 
 /*
 IsThreefoldRepetition checks whether the game has reached a threefold repetition.
 
-A position is considered identical if all of the following conditions are met:
+Two positions are considered identical if all of the following conditions are met:
   - Active colors are the same.
   - Pieces occupy the same squares.
   - Legal moves are the same.
@@ -185,8 +133,8 @@ NOTE: Positions are identical even if the en passant target square differs,
 provided that no en passant capture is possible.
 */
 func (g *Game) IsThreefoldRepetition() bool {
-	for _, reps := range g.Repetitions {
-		if reps >= 3 {
+	for _, numOfReps := range g.repetitions {
+		if numOfReps >= 3 {
 			return true
 		}
 	}
@@ -203,53 +151,49 @@ IsInsufficientMaterial returns true if one of the following statements is true:
 func (g *Game) IsInsufficientMaterial() bool {
 	// Bitmask for all dark squares.
 	dark := uint64(0xAA55AA55AA55AA55)
-	mat := g.calculateMaterial()
+	material := g.position.calculateMaterial()
 
-	if mat == 0 {
+	if material == 0 || (material == 3 && g.position.Bitboards[PieceWPawn] == 0 &&
+		g.position.Bitboards[PieceBPawn] == 0) {
 		return true
 	}
 
-	if mat == 3 && g.Position.Bitboards[PieceWPawn] == 0 &&
-		g.Position.Bitboards[PieceBPawn] == 0 {
-		return true
-	}
-
-	if mat == 6 {
-		wb := g.Position.Bitboards[PieceWBishop]
-		bb := g.Position.Bitboards[PieceBBishop]
+	if material == 6 {
+		wb := g.position.Bitboards[PieceWBishop]
+		bb := g.position.Bitboards[PieceBBishop]
 
 		// If there are two bishops both standing on the same colored squares.
 		return (wb != 0 && bb != 0 && ((wb&dark > 0 && bb&dark > 0) ||
 			(wb&dark == 0 && bb&dark == 0))) ||
 			// Or if there are two knights.
-			(g.Position.Bitboards[PieceWKnight] != 0 &&
-				g.Position.Bitboards[PieceBKnight] != 0)
+			(g.position.Bitboards[PieceWKnight] != 0 &&
+				g.position.Bitboards[PieceBKnight] != 0)
 	}
 	return false
 }
 
 /*
-IsCheckmate returns true if one of the following statements is true:
+IsCheckmate returns true if both of the following statements are true:
   - There are no legal moves available for the current turn.
   - The king of the side to move is in check.
 
-NOTE: If there are no legal moves, but the king is not in check,
-the position is a stalemate.
+NOTE: If there are no legal moves, but the king is not in check, the position is
+a stalemate.
 */
 func (g *Game) IsCheckmate() bool {
-	isKingInCheck := GenChecksCounter(g.Position.Bitboards,
-		1^g.Position.ActiveColor) > 0
-	return isKingInCheck && g.LegalMoves.LastMoveIndex == 0
+	return GenChecksCounter(g.position.Bitboards, 1^g.position.ActiveColor) > 0 &&
+		g.legalMoves.LastMoveIndex == 0
 }
 
-// IsMoveLegal checks if the specified move is legal.
+/*
+IsMoveLegal checks if the specified move is legal by comparing it with moves,
+stored in the legalMoves field.
+*/
 func (g *Game) IsMoveLegal(m Move) bool {
-	for _, move := range g.LegalMoves.Moves {
-		if move == 0x0 {
-			return false
-		}
-		if move.From() == m.From() && move.To() == m.To() &&
-			move.Type() == m.Type() && move.PromoPiece() == m.PromoPiece() {
+	for i := range g.legalMoves.LastMoveIndex {
+		lm := g.legalMoves.Moves[i]
+		if lm.From() == m.From() && lm.To() == m.To() && lm.Type() == m.Type() &&
+			lm.PromoPiece() == m.PromoPiece() {
 			return true
 		}
 	}
@@ -257,24 +201,11 @@ func (g *Game) IsMoveLegal(m Move) bool {
 }
 
 /*
-calculateMaterial calculates the piece valies of each side.  Used to determine
-a draw by insufficient material.
+SetClock sets the players’ remaining time and increment (bonus) values.  It
+expects these values to be specified in seconds.
 */
-func (g *Game) calculateMaterial() (mat int) {
-	coeff := 1
-	for pieceType := range PieceWKing {
-		switch pieceType {
-		case PieceWKnight, PieceBKnight,
-			PieceWBishop, PieceBBishop:
-			coeff = 3
-		case PieceWRook, PieceBRook:
-			coeff = 5
-		case PieceWQueen, PieceBQueen:
-			coeff = 9
-		}
-
-		mat += CountBits(g.Position.Bitboards[pieceType]) * coeff
-	}
-
-	return mat
+func (g *Game) SetClock(control, bonus int) {
+	g.whiteTime = control
+	g.blackTime = control
+	g.timeBonus = bonus
 }

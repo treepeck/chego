@@ -1,13 +1,13 @@
 /*
-position.go defines the Position structure and it's methods for representing and
-modifying the chessboard state.
+position.go defines the Position structure and it's methods for chessboard state
+management.
 */
 
 package chego
 
 /*
 Position represents a chessboard state that can be converted to or parsed from
-a FEN string.
+the FEN string.
 */
 type Position struct {
 	Bitboards      [15]uint64
@@ -20,20 +20,19 @@ type Position struct {
 
 /*
 MakeMove modifies the position by applying the specified move.  It is the
-caller’s responsibility to check if the specified move is at least pseudo-legal.
+caller’s responsibility to ensure that the specified move is at least
+pseudo-legal.
 
 Not only is the piece placement updated, but also the entire position, including
 castling rights, en passant target, halfmove counter, fullmove counter, and the
 active color.
 */
-func (p *Position) MakeMove(m Move) {
+func (p *Position) MakeMove(m Move, moved, captured Piece) {
 	to := uint64(1 << m.To())
 	from := uint64(1 << m.From())
-	piece := p.GetPieceFromSquare(from)
-	captured := p.GetPieceFromSquare(to)
 
 	// Clear the origin square.
-	p.removePiece(piece, from)
+	p.removePiece(moved, from)
 
 	// Increment halfmove counter to detect 50-move rule draw.
 	// This will be reset if the move is a capture or a pawn push.
@@ -50,19 +49,19 @@ func (p *Position) MakeMove(m Move) {
 
 	switch m.Type() {
 	case MoveNormal:
-		p.placePiece(piece, to)
+		p.placePiece(moved, to)
 
 	case MoveEnPassant:
-		p.placePiece(piece, to)
+		p.placePiece(moved, to)
 		// Remove the captured piece from the board.
-		if piece == PieceWPawn {
+		if moved == PieceWPawn {
 			p.removePiece(PieceBPawn, to>>8)
 		} else {
 			p.removePiece(PieceWPawn, to<<8)
 		}
 
 	case MoveCastling:
-		p.placePiece(piece, to)
+		p.placePiece(moved, to)
 		// Update the rook position.
 		switch to {
 		case G1: // White O-O.
@@ -96,8 +95,8 @@ func (p *Position) MakeMove(m Move) {
 	// is only legal for 1 move.
 	p.EPTarget = 0
 
-	switch piece {
-	// Set en passant target square is case of double pawn push.
+	switch moved {
+	// Set en passant target square in case of double pawn push.
 	case PieceWPawn, PieceBPawn:
 		if m.To()+16 == m.From() {
 			p.EPTarget = m.To() + 8
@@ -170,38 +169,41 @@ func (p *Position) canCastle(side int, attacks, occupancy uint64) bool {
 }
 
 /*
-placePiece places the piece on the specified square and updates the occupancy
-and allies bitboards.
+placePiece places the piece on the specified square as well as updates the
+occupancy and allies bitboards.
 */
 func (p *Position) placePiece(piece Piece, square uint64) {
 	// Place the piece.
 	p.Bitboards[piece] |= square
 	// Update allies bitboard.
-	if piece%2 == 0 { // White piece.
-		p.Bitboards[12] |= square
-	} else { // Black piece.
-		p.Bitboards[13] |= square
-	}
+	p.Bitboards[12+(piece%2)] |= square
 	// Update occupancy bitboard.
 	p.Bitboards[14] |= square
 }
 
 /*
-removePiece removes the piece from the specified square and updates the
+removePiece removes the piece from the specified square as well as updates the
 occupancy and allies bitboards.
 
-NOTE: if there is no piece of the specified type on the specified square, this
-function will place the piece instead of removing it.
+NOTE: If a piece of the specified type is not present on the specified square,
+it will be placed rather than removed.
 */
 func (p *Position) removePiece(piece Piece, square uint64) {
 	// Remove the piece.
 	p.Bitboards[piece] ^= square
 	// Update allies bitboard.
-	if piece%2 == 0 { // White piece.
-		p.Bitboards[12] ^= square
-	} else {
-		p.Bitboards[13] ^= square
-	}
+	p.Bitboards[12+(piece%2)] ^= square
 	// Update occupancy bitboard.
 	p.Bitboards[14] ^= square
+}
+
+/*
+calculateMaterial calculates the piece valies of each side.  Used to determine
+a draw by insufficient material.
+*/
+func (p *Position) calculateMaterial() (material int) {
+	for piece := range PieceWKing {
+		material += CountBits(p.Bitboards[piece]) * pieceWeights[piece]
+	}
+	return material
 }

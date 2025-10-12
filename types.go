@@ -28,6 +28,16 @@ func (m Move) PromoPiece() PromotionFlag { return PromotionFlag(m>>12) & 0x3 }
 func (m Move) Type() MoveType            { return MoveType(m>>14) & 0x3 }
 
 /*
+CompletedMove represents the completed chess move, encoded in Standard Algebraic
+Notation.  Used to form a movetext
+*/
+type CompletedMove struct {
+	San string
+	// Remaining time on a player's clock in seconds.
+	TimeLeft int
+}
+
+/*
 MoveList is used to store moves.  The main idea behind it is to preallocate
 an array with enough capacity to store all possible moves and avoid dynamic
 memory allocations.
@@ -140,16 +150,27 @@ const (
 )
 
 // Result represents the possible outcomes of a chess game.
-type Result int
+type Result string
 
 const (
-	ResultUnscored Result = iota // Default value: the game isn't finished yet.
-	ResultCheckmate
-	ResultTimeout
-	ResultStalemate
-	ResultInsufficientMaterial
-	ResultFiftyMove
-	ResultThreefoldRepetition
-	ResultResignation
-	ResultDrawByAgreement
+	ResultWhiteWon Result = "0-1"
+	ResultBlackWin Result = "1-0"
+	ResultDraw     Result = "1/2-1/2"
+	ResultUnknown  Result = "*"
+)
+
+/*
+Termination represents the reason for the conclusion of the game.  While the
+Result tag gives the result of the game, it does not provide any extra
+information and so the Termination tag is defined for this purpose.
+*/
+type Termination string
+
+const (
+	TerminationAbandoned       Termination = "abandoned"
+	TerminationAdjudication    Termination = "adjudication"
+	TerminationNormal          Termination = "normal"
+	TerminationRulesInfraction Termination = "rules infraction"
+	TerminationTimeForfeit     Termination = "time forfeit"
+	TerminationUnterminated    Termination = "unterminated"
 )

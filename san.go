@@ -27,7 +27,7 @@ checkmate symbols, which should be appended later by the caller.
 
 King castling and queen castling are encoded as "O-O" and "O-O-O" respectively.
 */
-func move2SAN(m Move, pos *Position, lm MoveList, p Piece, isCapture bool) string {
+func move2SAN(m Move, p Position, lm MoveList, moved Piece, isCapture bool) string {
 	if m.Type() == MoveCastling {
 		if m.To() == SA1 || m.To() == SA8 {
 			return "O-O-O"
@@ -39,7 +39,7 @@ func move2SAN(m Move, pos *Position, lm MoveList, p Piece, isCapture bool) strin
 	var b strings.Builder
 	b.Grow(2)
 
-	switch p {
+	switch moved {
 	case PieceWKnight, PieceBKnight:
 		b.WriteByte('N')
 	case PieceWBishop, PieceBBishop:
@@ -54,9 +54,9 @@ func move2SAN(m Move, pos *Position, lm MoveList, p Piece, isCapture bool) strin
 
 	// Resolve the ambiguity if needed.  Skip the pawns since their moves are
 	// always ambiguous.
-	if p > PieceBPawn {
+	if moved > PieceBPawn {
 		for i := range lm.LastMoveIndex {
-			if pos.GetPieceFromSquare(1<<lm.Moves[i].From()) == p &&
+			if p.GetPieceFromSquare(1<<lm.Moves[i].From()) == moved &&
 				lm.Moves[i].To() == m.To() &&
 				lm.Moves[i].From() != m.From() {
 				b.WriteByte(disambiguate(m.From(), lm.Moves[i].From()))
@@ -66,7 +66,7 @@ func move2SAN(m Move, pos *Position, lm MoveList, p Piece, isCapture bool) strin
 	}
 
 	if isCapture {
-		if p <= PieceBPawn {
+		if moved <= PieceBPawn {
 			b.WriteByte(files[m.From()%8])
 		}
 		b.WriteByte('x')

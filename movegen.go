@@ -85,10 +85,13 @@ func GenLegalMoves(p Position, l *MoveList) {
 	genNormalMoves(p, &pseudoLegal)
 
 	prev := p
+	var moved, captured Piece
 
 	for i := range pseudoLegal.LastMoveIndex {
+		moved = p.GetPieceFromSquare(1 << pseudoLegal.Moves[i].From())
+		captured = p.GetPieceFromSquare(1 << pseudoLegal.Moves[i].To())
 
-		p.MakeMove(pseudoLegal.Moves[i])
+		p.MakeMove(pseudoLegal.Moves[i], moved, captured)
 
 		if GenChecksCounter(p.Bitboards, 1^prev.ActiveColor) == 0 {
 			l.Push(pseudoLegal.Moves[i])
