@@ -5,7 +5,9 @@ game management logic.
 
 package chego
 
-// Precalculated magic used to form indices for the BitScanLookup array.
+/*
+Precalculated magic used to form indices for the BitScanLookup array.
+*/
 const bitscanMagic uint64 = 0x07EDD5E59A4E28C2
 
 /*

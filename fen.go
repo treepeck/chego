@@ -1,7 +1,7 @@
 /*
 fen.go implements conversions between Forsyth-Edwards Notation (FEN) strings
 and bitboard arrays.  Functions in this file expect the passed FEN strings and
-bitboard arrays to be valid, and may panic if they are not.
+bitboard arrays to be valid, and may panic if they aren't.
 
 Each FEN string consists of six parts, separated by a space:
  1. Piece placement: will be parsed into the array of bitboards.

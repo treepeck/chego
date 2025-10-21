@@ -66,9 +66,7 @@ func (g *Game) PushMove(m Move) {
 
 	// Encode the move in the Standard Algebraic Notation.  Note that the check
 	// and checkmate sybmols must be added later.
-	san := move2SAN(m, g.position, g.legalMoves, moved, isCapture)
-
-	g.position.MakeMove(m, moved, captured)
+	san := Move2SAN(m, &g.position, &g.legalMoves)
 
 	// Clear the repetitions map after applying the irreversable move.
 	// See https://www.chessprogramming.org/Irreversible_Moves
@@ -100,18 +98,6 @@ func (g *Game) PushMove(m Move) {
 
 	// Increment the repitition key entry.
 	g.repetitions[zobristKey(g.position)]++
-
-	// The move is check if the opponent's king is under attack.
-	isCheck := genAttacks(g.position.Bitboards, g.position.ActiveColor)&
-		g.position.Bitboards[PieceWKing+(1^g.position.ActiveColor)] != 0
-
-	if isCheck && g.legalMoves.LastMoveIndex == 0 {
-		// If the move results in checkmate, append the '#' symbol to the SAN.
-		san += "#"
-	} else if isCheck {
-		// If the move results in check, append the '+' symbol to the SAN.
-		san += "+"
-	}
 
 	// Store the completed move.
 	g.completedMoves = append(g.completedMoves, CompletedMove{

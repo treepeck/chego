@@ -1,6 +1,5 @@
 /*
-zobrist.go implements Zobrist hashing algorithm to detect position repetitions
-(to comply with the threefold repetition rule).
+zobrist.go implements Zobrist hashing algorithm to detect position repetitions.
 */
 
 package chego

@@ -1,9 +1,11 @@
 package chego
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestBitScan(t *testing.T) {
-	for i := 0; i < 64; i++ {
+	for i := range 64 {
 		bb := uint64(1 << i)
 
 		got := bitScan(bb)
@@ -14,7 +16,7 @@ func TestBitScan(t *testing.T) {
 }
 
 func TestPopLSB(t *testing.T) {
-	for i := 0; i < 64; i++ {
+	for i := range 64 {
 		bb := uint64(1 << i)
 
 		got := popLSB(&bb)
@@ -27,7 +29,7 @@ func TestPopLSB(t *testing.T) {
 func TestCountBits(t *testing.T) {
 	bb := uint64(0)
 
-	for i := 0; i < 64; i++ {
+	for i := range 64 {
 		bb |= uint64(1 << i)
 
 		got := CountBits(bb)

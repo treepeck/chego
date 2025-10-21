@@ -21,72 +21,90 @@ SAN string consists of these parts:
  5. Denotation of check by '+'. Omitted when the move is a checkmate;
  6. Denotation of checkmate by '#'.
 
-NOTE: The caller is responsible for denoting checks and checkmates.  Copying the
-board state before each move is expensive, so SAN is encoded without check or
-checkmate symbols, which should be appended later by the caller.
-
-King castling and queen castling are encoded as "O-O" and "O-O-O" respectively.
+NOTE: Position will be modified by applying the specified move to denote checks
+and checkmates.  MoveList will also be updated with legal moves for the next
+turn.  King castling and queen castling are encoded as "O-O" and "O-O-O"
+respectively.
 */
-func move2SAN(m Move, p Position, lm MoveList, moved Piece, isCapture bool) string {
-	if m.Type() == MoveCastling {
-		if m.To() == SA1 || m.To() == SA8 {
-			return "O-O-O"
-		} else {
-			return "O-O"
-		}
-	}
-
+func Move2SAN(m Move, p *Position, lm *MoveList) string {
 	var b strings.Builder
 	b.Grow(2)
 
-	switch moved {
-	case PieceWKnight, PieceBKnight:
-		b.WriteByte('N')
-	case PieceWBishop, PieceBBishop:
-		b.WriteByte('B')
-	case PieceWRook, PieceBRook:
-		b.WriteByte('R')
-	case PieceWQueen, PieceBQueen:
-		b.WriteByte('Q')
-	case PieceWKing, PieceBKing:
-		b.WriteByte('K')
-	}
+	moved := p.GetPieceFromSquare(1 << m.From())
+	captured := p.GetPieceFromSquare(1 << m.To())
 
-	// Resolve the ambiguity if needed.  Skip the pawns since their moves are
-	// always ambiguous.
-	if moved > PieceBPawn {
-		for i := range lm.LastMoveIndex {
-			if p.GetPieceFromSquare(1<<lm.Moves[i].From()) == moved &&
-				lm.Moves[i].To() == m.To() &&
-				lm.Moves[i].From() != m.From() {
-				b.WriteByte(disambiguate(m.From(), lm.Moves[i].From()))
-				break
+	if m.Type() == MoveCastling {
+		if m.To() == SC1 || m.To() == SC8 {
+			b.WriteString("O-O-O")
+		} else {
+			b.WriteString("O-O")
+		}
+	} else {
+		switch moved {
+		case PieceWKnight, PieceBKnight:
+			b.WriteByte('N')
+		case PieceWBishop, PieceBBishop:
+			b.WriteByte('B')
+		case PieceWRook, PieceBRook:
+			b.WriteByte('R')
+		case PieceWQueen, PieceBQueen:
+			b.WriteByte('Q')
+		case PieceWKing, PieceBKing:
+			b.WriteByte('K')
+		}
+
+		// Resolve the ambiguity if needed.  Skip the pawns since their moves are
+		// always ambiguous.
+		if moved > PieceBPawn {
+			for i := range lm.LastMoveIndex {
+				if p.GetPieceFromSquare(1<<lm.Moves[i].From()) == moved &&
+					lm.Moves[i].To() == m.To() &&
+					lm.Moves[i].From() != m.From() {
+					b.WriteByte(disambiguate(m.From(), lm.Moves[i].From()))
+					break
+				}
+			}
+		}
+
+		if captured != PieceNone || m.Type() == MoveEnPassant {
+			if moved <= PieceBPawn {
+				b.WriteByte(files[m.From()%8])
+			}
+			b.WriteByte('x')
+		}
+
+		// Append destination square.
+		b.WriteString(Square2String[m.To()])
+
+		// Append promotion info.
+		if m.Type() == MovePromotion {
+			switch m.PromoPiece() {
+			case PromotionKnight:
+				b.WriteString("=N")
+			case PromotionBishop:
+				b.WriteString("=B")
+			case PromotionRook:
+				b.WriteString("=R")
+			case PromotionQueen:
+				b.WriteString("=Q")
 			}
 		}
 	}
 
-	if isCapture {
-		if moved <= PieceBPawn {
-			b.WriteByte(files[m.From()%8])
-		}
-		b.WriteByte('x')
-	}
+	p.MakeMove(m, moved, captured)
 
-	// Append destination square.
-	b.WriteString(Square2String[m.To()])
+	GenLegalMoves(*p, lm)
 
-	// Append promotion info.
-	if m.Type() == MovePromotion {
-		switch m.PromoPiece() {
-		case PromotionKnight:
-			b.WriteString("=N")
-		case PromotionBishop:
-			b.WriteString("=B")
-		case PromotionRook:
-			b.WriteString("=R")
-		case PromotionQueen:
-			b.WriteString("=Q")
-		}
+	// The move is check if the opponent's king is under attack.
+	isCheck := genAttacks(p.Bitboards, 1^p.ActiveColor)&
+		p.Bitboards[PieceWKing+(p.ActiveColor)] != 0
+
+	if isCheck && lm.LastMoveIndex == 0 {
+		// If the move results in checkmate, append the '#' symbol to the SAN.
+		b.WriteByte('#')
+	} else if isCheck {
+		// If the move results in check, append the '+' symbol to the SAN.
+		b.WriteByte('+')
 	}
 
 	return b.String()

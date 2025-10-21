@@ -16,8 +16,10 @@ func NewMove(to, from, moveType int) Move {
 	return Move(to | (from << 6) | (PromotionQueen << 12) | (moveType << 14))
 }
 
-// NewPromotionMove creates a new move with the promotion type and specified
-// promotion piece.
+/*
+NewPromotionMove creates a new move with the promotion type and specified
+promotion piece.
+*/
 func NewPromotionMove(to, from, promoPiece int) Move {
 	return Move(to | (from << 6) | (promoPiece << 12) | (MovePromotion << 14))
 }
@@ -29,7 +31,7 @@ func (m Move) Type() MoveType            { return MoveType(m>>14) & 0x3 }
 
 /*
 CompletedMove represents the completed chess move, encoded in Standard Algebraic
-Notation.  Used to form a movetext
+Notation.
 */
 type CompletedMove struct {
 	San string
@@ -56,25 +58,6 @@ func (l *MoveList) Push(m Move) {
 	l.Moves[l.LastMoveIndex] = m
 	l.LastMoveIndex++
 }
-
-var (
-	// PieceSymbols maps each piece type to its symbol.
-	PieceSymbols = [12]byte{
-		'P', 'p', 'N', 'n', 'B', 'b',
-		'R', 'r', 'Q', 'q', 'K', 'k',
-	}
-	// Square2String maps each board square to its string representation.
-	Square2String = [64]string{
-		"a1", "b1", "c1", "d1", "e1", "f1", "g1", "h1",
-		"a2", "b2", "c2", "d2", "e2", "f2", "g2", "h2",
-		"a3", "b3", "c3", "d3", "e3", "f3", "g3", "h3",
-		"a4", "b4", "c4", "d4", "e4", "f4", "g4", "h4",
-		"a5", "b5", "c5", "d5", "e5", "f5", "g5", "h5",
-		"a6", "b6", "c6", "d6", "e6", "f6", "g6", "h6",
-		"a7", "b7", "c7", "d7", "e7", "f7", "g7", "h7",
-		"a8", "b8", "c8", "d8", "e8", "f8", "g8", "h8",
-	}
-)
 
 // Piece is an allias type to avoid bothersome conversion between
 // int and Piece.
