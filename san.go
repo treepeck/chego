@@ -1,30 +1,27 @@
 /*
 san.go implements serialization of moves into Standard Algebraic Notation.
-See https://ia802908.us.archive.org/26/items/pgn-standard-1994-03-12/PGN_standard_1994-03-12.txt Section 8.2.3.
+See http://www.saremba.de/chessgml/standards/pgn/pgn-complete.htm Section 8.2.3.
 */
 
 package chego
 
-import (
-	"strings"
-)
+import "strings"
 
 /*
 Move2SAN encodes the specified move to its SAN representation.
 
 SAN string consists of these parts:
  1. Piece name, omitted for for pawns;
- 2. Optional originating (source) file or rank, used for disambiguation.  If a
-    pawn performs a capture, its originating file is always included;
+ 2. Optional originating (source) file, rank, or both, used for disambiguation.
+    If a pawn performs a capture, its originating file is always included;
  3. Denotation of capture by 'x'. Mandatory for capture moves;
  4. Destination (to) file and rank;
  5. Denotation of check by '+'. Omitted when the move is a checkmate;
  6. Denotation of checkmate by '#'.
 
 NOTE: Position will be modified by applying the specified move to denote checks
-and checkmates.  MoveList will also be updated with legal moves for the next
-turn.  King castling and queen castling are encoded as "O-O" and "O-O-O"
-respectively.
+and checkmates.  MoveList will also be updated with legal moves for the next turn.
+King castling and queen castling are encoded as "O-O" and "O-O-O" respectively.
 */
 func Move2SAN(m Move, p *Position, lm *MoveList) string {
 	var b strings.Builder
@@ -53,22 +50,28 @@ func Move2SAN(m Move, p *Position, lm *MoveList) string {
 			b.WriteByte('K')
 		}
 
-		// Resolve the ambiguity if needed.  Skip the pawns since their moves are
-		// always ambiguous.
+		// Resolve the ambiguity if needed.  Skip the pawns since their moves
+		// are always ambiguous.
 		if moved > PieceBPawn {
+			// Find and store all ambiguities.
+			ambiguities := make([]int, 0)
 			for i := range lm.LastMoveIndex {
 				if p.GetPieceFromSquare(1<<lm.Moves[i].From()) == moved &&
 					lm.Moves[i].To() == m.To() &&
 					lm.Moves[i].From() != m.From() {
-					b.WriteByte(disambiguate(m.From(), lm.Moves[i].From()))
-					break
+					ambiguities = append(ambiguities, lm.Moves[i].From())
 				}
+			}
+
+			// If there are ambiquities, resolve them.
+			if len(ambiguities) != 0 {
+				b.WriteString(disambiguate(m.From(), ambiguities))
 			}
 		}
 
 		if captured != PieceNone || m.Type() == MoveEnPassant {
 			if moved <= PieceBPawn {
-				b.WriteByte(files[m.From()%8])
+				b.WriteByte(Square2String[m.From()][0])
 			}
 			b.WriteByte('x')
 		}
@@ -115,19 +118,36 @@ disambiguate resolves the ambiguity that arises when multiple pieces of the same
 type can move to the same square.
 
 Steps to resolve:
- 1. If the moving pieces can be distinguished by their originating files,
-    the originating file letter of the moving piece is inserted immediately
-    after the moving piece letter;
- 2. If the moving pieces can be distinguished by their originating ranks,
-    the originating rank digit of the moving piece is inserted immediately
-    after the moving piece letter.
+ 1. If the moving pieces can be distinguished by their originating files, the
+    originating file letter of the moving piece is inserted immediately after
+    the moving piece letter;
+ 2. If the moving pieces can be distinguished by their originating ranks, the
+    originating rank digit of the moving piece is inserted immediately after the
+    moving piece letter;
+ 3. When both the first and second steps fail, the file letter and rank digit of
+    the moving piece are inserted immediately after the piece letter.
 */
-func disambiguate(fromA, fromB int) byte {
-	if fromA%8 != fromB%8 {
-		return files[fromA%8]
+func disambiguate(from int, ambiguities []int) string {
+	ranksDiff := 0
+	filesDiff := 0
+
+	for i := range ambiguities {
+		if ambiguities[i]%8 != from%8 {
+			filesDiff++
+		}
+		if ambiguities[i]/8 != from/8 {
+			ranksDiff++
+		}
 	}
-	if fromA/8 != fromB/8 {
-		return byte(fromA/8 + 1 + '0')
+
+	// Step 1.
+	if filesDiff == len(ambiguities) {
+		return string(Square2String[from][0])
 	}
-	panic("cannot disambiguate the move")
+	// Step 2.
+	if ranksDiff == len(ambiguities) {
+		return string(Square2String[from][1])
+	}
+	// Step 3.
+	return Square2String[from]
 }

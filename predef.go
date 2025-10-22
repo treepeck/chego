@@ -194,8 +194,6 @@ var (
 	castlingAttackPath = [4]uint64{
 		0x70, 0x1C, 0x7000000000000000, 0x1C00000000000000,
 	}
-	// Each square file used in san.go.
-	files = [8]byte{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'}
 	// Each piece weight used to calculate material on the board.
 	// Use Piece type as index to get it's weight.
 	pieceWeights = [10]int{1, 1, 3, 3, 3, 3, 5, 5, 9, 9}
