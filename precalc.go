@@ -1,11 +1,25 @@
 /*
-predef.go contains declarations of predefined attack tables, magic numbers,
-and other useful constants.
+precalc.go contains declarations of precalculated attack tables, magic numbers,
+huffman codes, and other useful constants.
 */
 
 package chego
 
 var (
+	// Precalculated lookup table of LSB indices for 64-bit unsigned integers.
+	//
+	// See http://pradu.us/old/Nov27_2008/Buzz/research/magic/Bitboards.pdf
+	// section 3.2.
+	bitScanLookup = [64]int{
+		63, 0, 58, 1, 59, 47, 53, 2,
+		60, 39, 48, 27, 54, 33, 42, 3,
+		61, 51, 37, 40, 49, 18, 28, 20,
+		55, 30, 34, 11, 43, 14, 22, 4,
+		62, 57, 46, 52, 38, 26, 32, 41,
+		50, 36, 17, 19, 29, 10, 13, 21,
+		56, 45, 25, 31, 35, 16, 9, 12,
+		44, 24, 15, 8, 23, 7, 6, 5,
+	}
 	// bishopMagicNumbers is a precalculated lookup table of magic
 	// numbers for a bishop.
 	bishopMagicNumbers = [64]uint64{
@@ -143,24 +157,23 @@ var (
 		0x1000009400410822,
 	}
 
-	// Precalculated lookup tables used to speed up
-	// the move generation process.
+	// Precalculated lookup tables used to speed up the move generation process.
 
-	// Pawn's attack pattern depends on the color,
-	// so it is necessary to store two tables.
+	// Pawn's attack pattern depends on the color, so it is necessary to store
+	// two tables.
 	pawnAttacks     [2][64]uint64
 	knightAttacks   [64]uint64
 	kingAttacks     [64]uint64
 	bishopOccupancy [64]uint64
 	rookOccupancy   [64]uint64
-	// Lookup bishop attack table for every possible
-	// combination of square/occupancy.
+	// Lookup bishop attack table for every possible combination of
+	// square/occupancy.
 	bishopAttacks [64][512]uint64
-	// Lookup rook attack table for every possible
-	// combination of square/occupancy.
+	// Lookup rook attack table for every possible combination of
+	// square/occupancy.
 	rookAttacks [64][4096]uint64
-	// Precalculated lookup table of bishop relevant occupancy
-	// bit count for every square.
+	// Precalculated lookup table of bishop relevant occupancy bit count for
+	// every square.
 	bishopBitCount = [64]int{
 		6, 5, 5, 5, 5, 5, 5, 6,
 		5, 5, 5, 5, 5, 5, 5, 5,
@@ -171,8 +184,8 @@ var (
 		5, 5, 5, 5, 5, 5, 5, 5,
 		6, 5, 5, 5, 5, 5, 5, 6,
 	}
-	// Precalculated lookup table of rook relevant occupancy
-	// bit count for every square.
+	// Precalculated lookup table of rook relevant occupancy bit count for
+	// every square.
 	rookBitCount = [64]int{
 		12, 11, 11, 11, 11, 11, 11, 12,
 		11, 10, 10, 10, 10, 10, 10, 11,
@@ -212,6 +225,239 @@ var (
 		"a6", "b6", "c6", "d6", "e6", "f6", "g6", "h6",
 		"a7", "b7", "c7", "d7", "e7", "f7", "g7", "h7",
 		"a8", "b8", "c8", "d8", "e8", "f8", "g8", "h8",
+	}
+
+	// Huffman codes for legal move list indices.
+	// To calculate them, 10164006 games with 685863447 moves in total were
+	// analyzed.  See README.md and [codegen.go] for more details.
+	//
+	// Maximum number of legal moves per chess position appears to be 218, hence
+	// there are 218 elements.  The second half of the indices didn't actually
+	// occur, but they were each assigned a frequency of 1 to generate valid
+	// values.
+	//
+	// Generated using data derived from the Lichess database exports
+	// (https://database.lichess.org), which are released under the Creative
+	// Commons CC0 license.
+	huffmanCodes = [218]int{
+		35516075,
+		28863637,
+		33697520,
+		31340990,
+		26616335,
+		26967376,
+		26599119,
+		30127529,
+		26726290,
+		31546838,
+		21719881,
+		20960808,
+		20924693,
+		20426220,
+		20450176,
+		20288330,
+		21182180,
+		19779373,
+		22055062,
+		18959904,
+		16182542,
+		14643685,
+		15035699,
+		14551558,
+		12841369,
+		12121516,
+		11024918,
+		9908166,
+		9388606,
+		8215047,
+		7382257,
+		6656836,
+		6157014,
+		5400835,
+		4790308,
+		4378929,
+		3779824,
+		3261509,
+		2846448,
+		2399087,
+		2045159,
+		1707181,
+		1390278,
+		1139651,
+		932421,
+		722679,
+		623129,
+		423358,
+		320010,
+		235655,
+		175233,
+		127442,
+		91111,
+		64858,
+		46568,
+		31905,
+		22068,
+		15412,
+		10561,
+		7044,
+		4775,
+		3372,
+		2320,
+		1633,
+		1138,
+		821,
+		646,
+		454,
+		338,
+		294,
+		207,
+		195,
+		148,
+		134,
+		90,
+		85,
+		71,
+		62,
+		54,
+		59,
+		30,
+		42,
+		27,
+		26,
+		28,
+		22,
+		21,
+		27,
+		18,
+		16,
+		16,
+		12,
+		14,
+		3,
+		6,
+		4,
+		9,
+		3,
+		2,
+		3,
+		1,
+		2,
+		1,
+		1,
+		1,
+		1,
+		0,
+		0,
+		0,
+		2,
+		0,
+		0,
+		0,
+		0,
+		1,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
 	}
 )
 

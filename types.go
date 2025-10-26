@@ -1,4 +1,6 @@
-// types.go contains declarations of custom types and predefined constants.
+/*
+types.go contains declarations of custom types and predefined constants.
+*/
 
 package chego
 
@@ -11,7 +13,9 @@ Move represents a chess move, encoded as a 16 bit unsigned integer:
 */
 type Move uint16
 
-// NewMove creates a new move with the promotion piece set to [PromotionQueen].
+/*
+NewMove creates a new move with the promotion piece set to [PromotionQueen].
+*/
 func NewMove(to, from, moveType int) Move {
 	return Move(to | (from << 6) | (PromotionQueen << 12) | (moveType << 14))
 }
@@ -53,14 +57,25 @@ type MoveList struct {
 	LastMoveIndex byte
 }
 
-// Push adds the move to the end of the move list.
+/*
+Push adds the move to the end of the move list.
+*/
 func (l *MoveList) Push(m Move) {
 	l.Moves[l.LastMoveIndex] = m
 	l.LastMoveIndex++
 }
 
-// Piece is an allias type to avoid bothersome conversion between
-// int and Piece.
+/*
+HuffmanEntry represents the encoded.
+*/
+type HuffmanEntry struct {
+	Code byte
+	Size byte
+}
+
+/*
+Piece is an allias type to avoid bothersome conversion between int and Piece.
+*/
 type Piece = int
 
 const (
@@ -76,15 +91,18 @@ const (
 	PieceBQueen
 	PieceWKing
 	PieceBKing
-	// To avoid magic numbers.
 	PieceNone = -1
 )
 
-// PromotionFlag is an allias type to avoid bothersome conversion between
-// int and Color.
+/*
+PromotionFlag is an allias type to avoid bothersome conversion between int and
+Color.
+*/
 type PromotionFlag = int
 
-// 00 - knight, 01 - bishop, 10 - rook, 11 - queen.
+/*
+00 - knight, 01 - bishop, 10 - rook, 11 - queen.
+*/
 const (
 	PromotionKnight PromotionFlag = iota
 	PromotionBishop
@@ -92,7 +110,9 @@ const (
 	PromotionQueen
 )
 
-// Color is an allias type to avoid bothersome conversion between int and Color.
+/*
+Color is an allias type to avoid bothersome conversion between int and Color.
+*/
 type Color = int
 
 const (
@@ -101,8 +121,10 @@ const (
 	ColorBoth
 )
 
-// MoveType is an allias type to avoid bothersome conversion between
-// int and MoveType.
+/*
+MoveType is an allias type to avoid bothersome conversion between int and
+MoveType.
+*/
 type MoveType = int
 
 const (
@@ -132,7 +154,9 @@ const (
 	CastlingBlackLong  CastlingRights = 8
 )
 
-// Result represents the possible outcomes of a chess game.
+/*
+Result represents the possible outcomes of a chess game.
+*/
 type Result string
 
 const (
@@ -144,8 +168,8 @@ const (
 
 /*
 Termination represents the reason for the conclusion of the game.  While the
-Result tag gives the result of the game, it does not provide any extra
-information and so the Termination tag is defined for this purpose.
+Result types gives the result of the game, it does not provide any extra
+information and so the Termination type is defined for this purpose.
 */
 type Termination string
 

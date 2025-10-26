@@ -1,8 +1,25 @@
 package chego
 
 import (
+	"math/bits"
 	"testing"
 )
+
+func TestBitWriter(t *testing.T) {
+	bw := NewBitWriter()
+
+	expected := 0
+	for i := 1; i <= 64; i++ {
+		size := bits.Len64(uint64(i))
+		expected += size
+		bw.Write(uint(i), size)
+	}
+
+	got := bw.buff.Len()*8 + (intSize - bw.remainingBits)
+	if got != expected {
+		t.Logf("Expected %d bits. Buffer has %d bits\n", expected, got)
+	}
+}
 
 func TestBitScan(t *testing.T) {
 	for i := range 64 {
@@ -35,6 +52,15 @@ func TestCountBits(t *testing.T) {
 		got := CountBits(bb)
 		if got != i+1 {
 			t.Fatalf("Expected: %d got %d", i+1, got)
+		}
+	}
+}
+
+func BenchmarkBitWriter(b *testing.B) {
+	bw := NewBitWriter()
+	for b.Loop() {
+		for i := 1; i <= 64; i++ {
+			bw.Write(uint(i), bits.Len64(uint64(i)))
 		}
 	}
 }
