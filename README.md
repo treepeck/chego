@@ -1,14 +1,16 @@
 [![License: MPL 2.0](https://img.shields.io/badge/License-MPL%202.0-brightgreen.svg)](https://opensource.org/licenses/MPL-2.0)
 [![Go Reference](https://pkg.go.dev/badge/github.com/treepeck/chego.svg)](https://pkg.go.dev/github.com/treepeck/chego)
 
-Chego implements chessboard state management and legal move generation.
+Chego implements chessboard state management, legal move generation, and move<br/>
+compression.
 
 Piece positions are stored as bitboards.
 
 Move generation is implemented using the Magic Bitboards method.
 
-It is assigned to use in the web-servers (for example, [justchess.org](https://justchess.org/)),<br/>
-hence it does not provide any GUI or CLI.
+Compression is implemented using the Huffman coding method.
+
+It is assigned to use in the web-servers (for example, [justchess.org](https://justchess.org/)), hence it doesn't<br/> provide any GUI or CLI.
 
 ## Usage
 
@@ -58,14 +60,36 @@ cd chego
 
 ## Tests and benchmarks
 
-To execute the performance test, run this command in the chego folder:  
+To execute the performance test, run this command in the chego folder:
 
 ```
-go run ./internal/perft.go -depth {IntValue}
-```	
+go run ./internal/perft/perft.go -depth {IntValue}
+```
 
-Chego generates 119060324 moves at depth 6 in approximately 6 seconds<br/>
-on an Intel i7-10750H CPU.
+Chego generates 119060324 moves at depth 6 in approximately 6 seconds on an<br/>
+Intel i7-10750H CPU.
+
+## Generate Huffman codes
+
+Chego allows to generate Huffman codes for legal moves, which helps to compress<br/>
+the completed move storage and drastically reduce the size of database.
+
+1. Download the PGN file containing one or more games (more is better).
+
+2. Prepare the file to code generation by executing this command in the chego folder:
+
+```
+go run ./internal/codegen/codegen.go -input {Filename.pgn} -output {Clean.txt} -task clean
+```
+
+3. Generate Huffman codes after cleaning:
+
+```
+go run ./internal/codegen/codegen.go -input {Clean.txt} -output {Codes.txt} -task generate -workers {IntValue}
+```
+
+The workers flag defines how many concurrent goroutines will perform Huffman<br/>
+code generation.  Higher values reduce execution time, but increase CPU usage.
 
 ## License
 

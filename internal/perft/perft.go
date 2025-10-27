@@ -1,8 +1,11 @@
 /*
-Package main provides debugging and testing functions.  It is excluded from the
-chego package, as it is only used for testing purposes.  The chego users won't
-be able to import this package.
+peft.go implements debugging and testing functions for the move generator.
+
+It is internal, as it is only used for testing purposes.
+
+TODO: fix verbose perft.  It doesn't print the resulting information correctly.
 */
+
 package main
 
 import (
@@ -127,7 +130,7 @@ func main() {
 	// Otherwise, perft will not work.
 	chego.InitAttackTables()
 
-	depth := flag.Int("depth", 2, "Performance test depth")
+	depth := flag.Int("depth", 1, "Performance test depth")
 	verbose := flag.Bool("verbose", false, "Wether to print the debug info")
 	cpuprofile := flag.String("cpuprofile", "", "File to write a cpu profile")
 	memprofile := flag.String("memprofile", "", "File to write a memory profile")
@@ -136,15 +139,15 @@ func main() {
 
 	r := &result{}
 
-	p := chego.ParseFEN(chego.InitialPos)
+	fen := chego.InitialPos
+	p := chego.ParseFEN(fen)
 
 	start := time.Now()
 	defer func() {
 		elapsed := time.Since(start)
 
 		if *verbose {
-			log.Printf("\nRoot position:\n%s\n\n\t%s\n\n",
-				position(chego.ParseFEN(chego.InitialPos)), chego.InitialPos)
+			log.Printf("\nRoot position:\n%s\n\n\t%s\n\n", position(p), fen)
 			log.Printf("\t%d\t%d\t\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t",
 				*depth,
 				r.nodes,
@@ -190,13 +193,13 @@ func main() {
 
 // position formats a full chess position into a string.
 func position(p chego.Position) string {
-	var posStr strings.Builder
+	var b strings.Builder
 
 	for rank := 7; rank >= 0; rank-- {
-		posStr.WriteByte(byte(rank) + 1 + '0')
-		posStr.WriteString("  ")
+		b.WriteByte(byte(rank) + 1 + '0')
+		b.WriteString("  ")
 
-		for file := 0; file < 8; file++ {
+		for file := range 8 {
 			square := uint64(1 << (8*rank + file))
 
 			symbol := byte('.')
@@ -208,39 +211,39 @@ func position(p chego.Position) string {
 				}
 			}
 
-			posStr.WriteByte(symbol)
-			posStr.WriteString("  ")
+			b.WriteByte(symbol)
+			b.WriteString("  ")
 		}
-		posStr.WriteByte('\n')
+		b.WriteByte('\n')
 	}
 
-	posStr.WriteString("   a  b  c  d  e  f  g  h\nActive color: ")
+	b.WriteString("   a  b  c  d  e  f  g  h\nActive color: ")
 
 	if p.ActiveColor == chego.ColorWhite {
-		posStr.WriteString("white\nEn passant: ")
+		b.WriteString("white\nEn passant: ")
 	} else {
-		posStr.WriteString("black\nEn passant: ")
+		b.WriteString("black\nEn passant: ")
 	}
 
 	if p.EPTarget == 0 {
-		posStr.WriteString("none\nCastling rights: ")
+		b.WriteString("none\nCastling rights: ")
 	} else {
-		posStr.WriteString(chego.Square2String[p.EPTarget])
-		posStr.WriteString("\nCastling rights: ")
+		b.WriteString(chego.Square2String[p.EPTarget])
+		b.WriteString("\nCastling rights: ")
 	}
 
 	if p.CastlingRights&chego.CastlingWhiteShort != 0 {
-		posStr.WriteByte('K')
+		b.WriteByte('K')
 	}
 	if p.CastlingRights&chego.CastlingWhiteLong != 0 {
-		posStr.WriteByte('Q')
+		b.WriteByte('Q')
 	}
 	if p.CastlingRights&chego.CastlingBlackShort != 0 {
-		posStr.WriteByte('k')
+		b.WriteByte('k')
 	}
 	if p.CastlingRights&chego.CastlingBlackLong != 0 {
-		posStr.WriteByte('q')
+		b.WriteByte('q')
 	}
 
-	return posStr.String()
+	return b.String()
 }

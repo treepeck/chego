@@ -66,11 +66,25 @@ func (l *MoveList) Push(m Move) {
 }
 
 /*
-HuffmanEntry represents the encoded.
+Node represents a binary tree node.  Used to build a Huffman coding tree.
 */
-type HuffmanEntry struct {
-	Code byte
-	Size byte
+type Node struct {
+	Left  *Node
+	Right *Node
+	Index int // Legal move index.
+	Freq  int // Number of played times.
+}
+
+func NewNode(left, right *Node, ind, freq int) *Node {
+	return &Node{Left: left, Right: right, Index: ind, Freq: freq}
+}
+
+/*
+Entry of the huffmanCodes array.
+*/
+type huffmanEntry struct {
+	Code int
+	Size int
 }
 
 /*
