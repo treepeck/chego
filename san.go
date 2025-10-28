@@ -98,6 +98,19 @@ func Move2SAN(m Move, p *Position, lm *MoveList) string {
 
 	GenLegalMoves(*p, lm)
 
+	// Clear en passant target square after each completed move.
+	ep := 0
+	// If the en passant capture is not possible, clear the en passant target,
+	// since it can break the threefold-repetition detection by corrupting the
+	// Zobrish hash.  See [IsThreefoldRepetition] function commentary.
+	for i := range lm.LastMoveIndex {
+		if lm.Moves[i].Type() == MoveEnPassant {
+			ep = p.EPTarget
+			break
+		}
+	}
+	p.EPTarget = ep
+
 	// The move is check if the opponent's king is under attack.
 	isCheck := genAttacks(p.Bitboards, 1^p.ActiveColor)&
 		p.Bitboards[PieceWKing+(p.ActiveColor)] != 0

@@ -98,3 +98,11 @@ func BenchmarkMakeMove(b *testing.B) {
 		pos.MakeMove(NewMove(SG1, SE1, MoveCastling), PieceWKing, PieceNone)
 	}
 }
+
+func BenchmarkZobristKey(b *testing.B) {
+	p := ParseFEN("rnbqkbnr/pppppppp/8/8/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 1")
+
+	for b.Loop() {
+		p.zobristKey()
+	}
+}

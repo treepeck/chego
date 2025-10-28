@@ -1,8 +1,8 @@
-// game.go impements chess game state management.
+/*
+game.go impements chess game state management.
+*/
 
 package chego
-
-import "time"
 
 /*
 Game represents a game state that can be converted to or parsed from the PGN
@@ -13,7 +13,8 @@ by calling the [DecrementTime] function.  The value of timeBonus is added to
 the player's timer during the [PushMove] function, so the user must ensure that
 time ticks and moves are not handled concurrently (prevent race conditions).
 
-NOTE: Call [InitAttackTables] and [InitZobristKeys] ONCE before using a [Game].
+NOTE: Call [InitAttackTables] and [InitZobristKeys] ONCE before creating a
+[Game].
 */
 type Game struct {
 	legalMoves     MoveList
@@ -22,11 +23,6 @@ type Game struct {
 	// Repetition keys are stored as a map of Zobrist keys to the number of
 	// times each position has occurred.
 	repetitions map[uint64]int
-	Date        time.Time
-	Event       string
-	Site        string
-	White       string
-	Black       string
 	Result      Result
 	Termination Termination
 	whiteTime   int
@@ -39,23 +35,21 @@ func NewGame() *Game {
 		position:       ParseFEN(InitialPos),
 		repetitions:    make(map[uint64]int, 1),
 		completedMoves: make([]CompletedMove, 0),
-		Date:           time.Now(),
 		Result:         ResultUnknown,
 		Termination:    TerminationUnterminated,
 	}
 
 	GenLegalMoves(g.position, &g.legalMoves)
 
-	// Initialize the initial Zobrist key.
-	g.repetitions[zobristKey(g.position)] = 1
+	// Initialize Zobrist key for the initial position.
+	g.repetitions[g.position.zobristKey()] = 1
 
 	return g
 }
 
 /*
 PushMove updates the game state by performing the specified move.  It's a
-caller's responsibility to ensure that the specified move is legal.  This
-function also generates legal moves for the next player.
+caller's responsibility to ensure that the specified move is legal.
 
 PushMove is not safe for concurrent use.
 */
@@ -66,6 +60,7 @@ func (g *Game) PushMove(m Move) {
 
 	// Encode the move in the Standard Algebraic Notation.  Note that the check
 	// and checkmate sybmols must be added later.
+	// Move2SAN also perform the move and generates legal moves for next turn.
 	san := Move2SAN(m, &g.position, &g.legalMoves)
 
 	// Clear the repetitions map after applying the irreversable move.
@@ -81,23 +76,9 @@ func (g *Game) PushMove(m Move) {
 		timeLeft = g.blackTime
 	}
 
-	// Generate legal moves for the next turn.
-	GenLegalMoves(g.position, &g.legalMoves)
-
-	// Clear en passant target square after each completed move.
-	ep := 0
-	// If the en passant capture is not possible, clear the en passant target,
-	// since it can break the threefold-repetition detection by corrupting the
-	// Zobrish hash.  See [IsThreefoldRepetition] function commentary.
-	for i := range g.legalMoves.LastMoveIndex {
-		if g.legalMoves.Moves[i].Type() == MoveEnPassant {
-			ep = g.position.EPTarget
-		}
-	}
-	g.position.EPTarget = ep
-
 	// Increment the repitition key entry.
-	g.repetitions[zobristKey(g.position)]++
+	// TODO: optimize by updating the hash incrementally.
+	g.repetitions[g.position.zobristKey()]++
 
 	// Store the completed move.
 	g.completedMoves = append(g.completedMoves, CompletedMove{

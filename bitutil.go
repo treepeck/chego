@@ -26,9 +26,7 @@ type BitWriter struct {
 	remainingBits int
 }
 
-func NewBitWriter() *BitWriter {
-	return &BitWriter{remainingBits: intSize}
-}
+func NewBitWriter() *BitWriter { return &BitWriter{remainingBits: intSize} }
 
 /*
 Write writes data with size bits to the BitWriter.  If size is less than or
@@ -77,7 +75,7 @@ func bitScan(bitboard uint64) int {
 }
 
 /*
-popLSB removes (pops) the LSB from the bitboard and returns its index.
+popLSB removes the LSB from the bitboard and returns its index.
 
 NOTE: popLSB returns 63 for the empty bitboard.
 */

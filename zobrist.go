@@ -44,23 +44,3 @@ func InitZobristKeys() {
 
 	colorKey = rand.Uint64()
 }
-
-/*
-zobristKey hashes the given position into a 64-bit unsigned integer.  This
-allows positions to be used as lookup keys and stored or compared efficiently.
-*/
-func zobristKey(p Position) (key uint64) {
-	for i := PieceWPawn; i <= PieceBKing; i++ {
-		for p.Bitboards[i] > 0 {
-			key ^= pieceKeys[i][popLSB(&p.Bitboards[i])]
-		}
-	}
-
-	key ^= epKeys[p.EPTarget]
-
-	key ^= castlingKeys[p.CastlingRights]
-
-	key ^= colorKey & uint64(p.ActiveColor)
-
-	return key
-}

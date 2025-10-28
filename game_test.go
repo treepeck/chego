@@ -197,7 +197,7 @@ func BenchmarkIsThreefoldRepetition(b *testing.B) {
 		game.PushMove(move)
 		GenLegalMoves(game.position, &game.legalMoves)
 		if i < len(moveStack)-1 {
-			game.repetitions[zobristKey(game.position)]++
+			game.repetitions[game.position.zobristKey()]++
 		}
 	}
 

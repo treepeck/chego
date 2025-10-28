@@ -53,7 +53,6 @@ func TestMove2SAN(t *testing.T) {
 	}
 
 	for _, tc := range testcases {
-		t.Logf("passing test: %s", tc.expected)
 		var legalMoves MoveList
 		GenLegalMoves(tc.pos, &legalMoves)
 
