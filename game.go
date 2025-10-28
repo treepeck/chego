@@ -19,7 +19,7 @@ NOTE: Call [InitAttackTables] and [InitZobristKeys] ONCE before creating a
 type Game struct {
 	legalMoves     MoveList
 	position       Position
-	completedMoves []CompletedMove
+	CompletedMoves []CompletedMove
 	// Repetition keys are stored as a map of Zobrist keys to the number of
 	// times each position has occurred.
 	repetitions map[uint64]int
@@ -34,7 +34,7 @@ func NewGame() *Game {
 	g := &Game{
 		position:       ParseFEN(InitialPos),
 		repetitions:    make(map[uint64]int, 1),
-		completedMoves: make([]CompletedMove, 0),
+		CompletedMoves: make([]CompletedMove, 0),
 		Result:         ResultUnknown,
 		Termination:    TerminationUnterminated,
 	}
@@ -81,7 +81,7 @@ func (g *Game) PushMove(m Move) {
 	g.repetitions[g.position.zobristKey()]++
 
 	// Store the completed move.
-	g.completedMoves = append(g.completedMoves, CompletedMove{
+	g.CompletedMoves = append(g.CompletedMoves, CompletedMove{
 		San:      san,
 		TimeLeft: timeLeft,
 	})
