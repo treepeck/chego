@@ -17,7 +17,7 @@ NOTE: Call [InitAttackTables] and [InitZobristKeys] ONCE before creating a
 [Game].
 */
 type Game struct {
-	legalMoves     MoveList
+	LegalMoves     MoveList
 	position       Position
 	CompletedMoves []CompletedMove
 	// Repetition keys are stored as a map of Zobrist keys to the number of
@@ -39,7 +39,7 @@ func NewGame() *Game {
 		Termination:    TerminationUnterminated,
 	}
 
-	GenLegalMoves(g.position, &g.legalMoves)
+	GenLegalMoves(g.position, &g.LegalMoves)
 
 	// Initialize Zobrist key for the initial position.
 	g.repetitions[g.position.zobristKey()] = 1
@@ -61,7 +61,7 @@ func (g *Game) PushMove(m Move) {
 	// Encode the move in the Standard Algebraic Notation.  Note that the check
 	// and checkmate sybmols must be added later.
 	// Move2SAN also perform the move and generates legal moves for next turn.
-	san := Move2SAN(m, &g.position, &g.legalMoves)
+	san := Move2SAN(m, &g.position, &g.LegalMoves)
 
 	// Clear the repetitions map after applying the irreversable move.
 	// See https://www.chessprogramming.org/Irreversible_Moves
@@ -149,16 +149,16 @@ a stalemate.
 */
 func (g *Game) IsCheckmate() bool {
 	return GenChecksCounter(g.position.Bitboards, 1^g.position.ActiveColor) > 0 &&
-		g.legalMoves.LastMoveIndex == 0
+		g.LegalMoves.LastMoveIndex == 0
 }
 
 /*
 IsMoveLegal checks if the specified move is legal by comparing it with moves,
-stored in the legalMoves field.
+stored in the LegalMoves field.
 */
 func (g *Game) IsMoveLegal(m Move) bool {
-	for i := range g.legalMoves.LastMoveIndex {
-		lm := g.legalMoves.Moves[i]
+	for i := range g.LegalMoves.LastMoveIndex {
+		lm := g.LegalMoves.Moves[i]
 		if lm.From() == m.From() && lm.To() == m.To() && lm.Type() == m.Type() &&
 			lm.PromoPiece() == m.PromoPiece() {
 			return true

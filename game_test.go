@@ -152,7 +152,7 @@ func TestIsCheckmate(t *testing.T) {
 	game := NewGame()
 	for _, tc := range testcases {
 		game.position = ParseFEN(tc.fenString)
-		GenLegalMoves(game.position, &game.legalMoves)
+		GenLegalMoves(game.position, &game.LegalMoves)
 
 		got := game.IsCheckmate()
 		if got != tc.expected {
@@ -195,7 +195,7 @@ func BenchmarkIsThreefoldRepetition(b *testing.B) {
 
 	for i, move := range moveStack {
 		game.PushMove(move)
-		GenLegalMoves(game.position, &game.legalMoves)
+		GenLegalMoves(game.position, &game.LegalMoves)
 		if i < len(moveStack)-1 {
 			game.repetitions[game.position.zobristKey()]++
 		}
