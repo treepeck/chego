@@ -24,9 +24,9 @@ type Game struct {
 	repetitions map[uint64]int
 	Result      Result
 	Termination Termination
-	whiteTime   int
-	blackTime   int
-	timeBonus   int
+	WhiteTime   int
+	BlackTime   int
+	TimeBonus   int
 }
 
 func NewGame() *Game {
