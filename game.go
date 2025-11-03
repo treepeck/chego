@@ -17,9 +17,8 @@ NOTE: Call [InitAttackTables] and [InitZobristKeys] ONCE before creating a
 [Game].
 */
 type Game struct {
-	LegalMoves     MoveList
-	position       Position
-	CompletedMoves []CompletedMove
+	LegalMoves MoveList
+	position   Position
 	// Repetition keys are stored as a map of Zobrist keys to the number of
 	// times each position has occurred.
 	repetitions map[uint64]int
@@ -32,11 +31,10 @@ type Game struct {
 
 func NewGame() *Game {
 	g := &Game{
-		position:       ParseFEN(InitialPos),
-		repetitions:    make(map[uint64]int, 1),
-		CompletedMoves: make([]CompletedMove, 0),
-		Result:         ResultUnknown,
-		Termination:    TerminationUnterminated,
+		position:    ParseFEN(InitialPos),
+		repetitions: make(map[uint64]int, 1),
+		Result:      ResultUnknown,
+		Termination: TerminationUnterminated,
 	}
 
 	GenLegalMoves(g.position, &g.LegalMoves)
@@ -48,12 +46,11 @@ func NewGame() *Game {
 }
 
 /*
-PushMove updates the game state by performing the specified move.  It's a
-caller's responsibility to ensure that the specified move is legal.
-
-PushMove is not safe for concurrent use.
+PushMove updates the game state by performing the specified move and returns its
+Standard Algebraic Notation.  It's a caller's responsibility to ensure that the
+specified move is legal.  Not safe for concurrent use.
 */
-func (g *Game) PushMove(m Move) {
+func (g *Game) PushMove(m Move) string {
 	moved := g.position.GetPieceFromSquare(1 << m.From())
 	captured := g.position.GetPieceFromSquare(1 << m.To())
 	isCapture := captured != PieceNone
@@ -70,21 +67,11 @@ func (g *Game) PushMove(m Move) {
 		clear(g.repetitions)
 	}
 
-	// Store the clock value.
-	timeLeft := g.whiteTime
-	if moved%2 != 0 {
-		timeLeft = g.blackTime
-	}
-
 	// Increment the repitition key entry.
 	// TODO: optimize by updating the hash incrementally.
 	g.repetitions[g.position.zobristKey()]++
 
-	// Store the completed move.
-	g.CompletedMoves = append(g.CompletedMoves, CompletedMove{
-		San:      san,
-		TimeLeft: timeLeft,
-	})
+	return san
 }
 
 /*

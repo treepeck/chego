@@ -34,16 +34,6 @@ func (m Move) PromoPiece() PromotionFlag { return PromotionFlag(m>>12) & 0x3 }
 func (m Move) Type() MoveType            { return MoveType(m>>14) & 0x3 }
 
 /*
-CompletedMove represents the completed chess move, encoded in Standard Algebraic
-Notation.
-*/
-type CompletedMove struct {
-	San string
-	// Remaining time on a player's clock in seconds.
-	TimeLeft int
-}
-
-/*
 MoveList is used to store moves.  The main idea behind it is to preallocate
 an array with enough capacity to store all possible moves and avoid dynamic
 memory allocations.
