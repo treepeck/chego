@@ -165,7 +165,7 @@ type Result string
 
 const (
 	ResultWhiteWon Result = "0-1"
-	ResultBlackWin Result = "1-0"
+	ResultBlackWon Result = "1-0"
 	ResultDraw     Result = "1/2-1/2"
 	ResultUnknown  Result = "*"
 )
