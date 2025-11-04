@@ -159,7 +159,7 @@ SetClock sets the players’ remaining time and increment (bonus) values.  It
 expects these values to be specified in seconds.
 */
 func (g *Game) SetClock(control, bonus int) {
-	g.whiteTime = control
-	g.blackTime = control
-	g.timeBonus = bonus
+	g.WhiteTime = control
+	g.BlackTime = control
+	g.TimeBonus = bonus
 }
