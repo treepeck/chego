@@ -1,28 +1,24 @@
-/*
-san.go implements serialization of moves into Standard Algebraic Notation.
-See http://www.saremba.de/chessgml/standards/pgn/pgn-complete.htm Section 8.2.3.
-*/
+// san.go implements serialization of moves into Standard Algebraic Notation.
+// See http://www.saremba.de/chessgml/standards/pgn/pgn-complete.htm Section 8.2.3.
 
 package chego
 
 import "strings"
 
-/*
-Move2SAN encodes the specified move to its SAN representation.
-
-SAN string consists of these parts:
- 1. Piece name, omitted for for pawns;
- 2. Optional originating (source) file, rank, or both, used for disambiguation.
-    If a pawn performs a capture, its originating file is always included;
- 3. Denotation of capture by 'x'. Mandatory for capture moves;
- 4. Destination (to) file and rank;
- 5. Denotation of check by '+'. Omitted when the move is a checkmate;
- 6. Denotation of checkmate by '#'.
-
-NOTE: Position will be modified by applying the specified move to denote checks
-and checkmates.  MoveList will also be updated with legal moves for the next turn.
-King castling and queen castling are encoded as "O-O" and "O-O-O" respectively.
-*/
+// Move2SAN encodes the specified move to its SAN representation.
+//
+// SAN string consists of these parts:
+//  1. Piece name, omitted for for pawns;
+//  2. Optional originating (source) file, rank, or both, used for disambiguation.
+//     If a pawn performs a capture, its originating file is always included;
+//  3. Denotation of capture by 'x'. Mandatory for capture moves;
+//  4. Destination (to) file and rank;
+//  5. Denotation of check by '+'. Omitted when the move is a checkmate;
+//  6. Denotation of checkmate by '#'.
+//
+// NOTE: Position will be modified by applying the specified move to denote checks
+// and checkmates.  MoveList will also be updated with legal moves for the next turn.
+// King castling and queen castling are encoded as "O-O" and "O-O-O" respectively.
 func Move2SAN(m Move, p *Position, lm *MoveList) string {
 	var b strings.Builder
 	b.Grow(2)
@@ -126,20 +122,18 @@ func Move2SAN(m Move, p *Position, lm *MoveList) string {
 	return b.String()
 }
 
-/*
-disambiguate resolves the ambiguity that arises when multiple pieces of the same
-type can move to the same square.
-
-Steps to resolve:
- 1. If the moving pieces can be distinguished by their originating files, the
-    originating file letter of the moving piece is inserted immediately after
-    the moving piece letter;
- 2. If the moving pieces can be distinguished by their originating ranks, the
-    originating rank digit of the moving piece is inserted immediately after the
-    moving piece letter;
- 3. When both the first and second steps fail, the file letter and rank digit of
-    the moving piece are inserted immediately after the piece letter.
-*/
+// disambiguate resolves the ambiguity that arises when multiple pieces of the same
+// type can move to the same square.
+//
+// Steps to resolve:
+//  1. If the moving pieces can be distinguished by their originating files, the
+//     originating file letter of the moving piece is inserted immediately after
+//     the moving piece letter;
+//  2. If the moving pieces can be distinguished by their originating ranks, the
+//     originating rank digit of the moving piece is inserted immediately after the
+//     moving piece letter;
+//  3. When both the first and second steps fail, the file letter and rank digit of
+//     the moving piece are inserted immediately after the piece letter.
 func disambiguate(from int, ambiguities []int) string {
 	ranksDiff := 0
 	filesDiff := 0

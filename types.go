@@ -1,29 +1,21 @@
-/*
-types.go contains declarations of custom types and predefined constants.
-*/
+// types.go contains declarations of custom types and predefined constants.
 
 package chego
 
-/*
-Move represents a chess move, encoded as a 16 bit unsigned integer:
-  - 0-5:   To (destination) square index.
-  - 6-11:  From (origin/source) square index.
-  - 12-13: Promotion piece (see [PromotionFlag]).
-  - 14-15: Move type (see [MoveType]).
-*/
+// Move represents a chess move, encoded as a 16 bit unsigned integer:
+//   - 0-5:   To (destination) square index.
+//   - 6-11:  From (origin/source) square index.
+//   - 12-13: Promotion piece (see [PromotionFlag]).
+//   - 14-15: Move type (see [MoveType]).
 type Move uint16
 
-/*
-NewMove creates a new move with the promotion piece set to [PromotionQueen].
-*/
+// NewMove creates a new move with the promotion piece set to [PromotionQueen].
 func NewMove(to, from, moveType int) Move {
 	return Move(to | (from << 6) | (PromotionQueen << 12) | (moveType << 14))
 }
 
-/*
-NewPromotionMove creates a new move with the promotion type and specified
-promotion piece.
-*/
+// NewPromotionMove creates a new move with the promotion type and specified
+// promotion piece.
 func NewPromotionMove(to, from, promoPiece int) Move {
 	return Move(to | (from << 6) | (promoPiece << 12) | (MovePromotion << 14))
 }
@@ -33,11 +25,9 @@ func (m Move) From() int                 { return int(m>>6) & 0x3F }
 func (m Move) PromoPiece() PromotionFlag { return PromotionFlag(m>>12) & 0x3 }
 func (m Move) Type() MoveType            { return MoveType(m>>14) & 0x3 }
 
-/*
-MoveList is used to store moves.  The main idea behind it is to preallocate
-an array with enough capacity to store all possible moves and avoid dynamic
-memory allocations.
-*/
+// MoveList is used to store moves.  The main idea behind it is to preallocate
+// an array with enough capacity to store all possible moves and avoid dynamic
+// memory allocations.
 type MoveList struct {
 	// Maximum number of moves per chess position is equal to 218,
 	// hence 218 elements.
@@ -47,17 +37,19 @@ type MoveList struct {
 	LastMoveIndex byte
 }
 
-/*
-Push adds the move to the end of the move list.
-*/
+// Push adds the move to the end of the move list.
 func (l *MoveList) Push(m Move) {
 	l.Moves[l.LastMoveIndex] = m
 	l.LastMoveIndex++
 }
 
-/*
-Node represents a binary tree node.  Used to build a Huffman coding tree.
-*/
+// Entry of the huffmanCodes array.
+type huffmanEntry struct {
+	Code int
+	Size int
+}
+
+// Node represents a binary tree node.  Used to build a Huffman coding tree.
 type Node struct {
 	Left  *Node
 	Right *Node
@@ -69,17 +61,7 @@ func NewNode(left, right *Node, ind, freq int) *Node {
 	return &Node{Left: left, Right: right, Index: ind, Freq: freq}
 }
 
-/*
-Entry of the huffmanCodes array.
-*/
-type huffmanEntry struct {
-	Code int
-	Size int
-}
-
-/*
-Piece is an allias type to avoid bothersome conversion between int and Piece.
-*/
+// Piece is an allias type to avoid bothersome conversion between int and Piece.
 type Piece = int
 
 const (
@@ -98,15 +80,11 @@ const (
 	PieceNone = -1
 )
 
-/*
-PromotionFlag is an allias type to avoid bothersome conversion between int and
-Color.
-*/
+// PromotionFlag is an allias type to avoid bothersome conversion between int
+// and Color.
 type PromotionFlag = int
 
-/*
-00 - knight, 01 - bishop, 10 - rook, 11 - queen.
-*/
+// 00 - knight, 01 - bishop, 10 - rook, 11 - queen.
 const (
 	PromotionKnight PromotionFlag = iota
 	PromotionBishop
@@ -114,9 +92,7 @@ const (
 	PromotionQueen
 )
 
-/*
-Color is an allias type to avoid bothersome conversion between int and Color.
-*/
+// Color is an allias type to avoid bothersome conversion between int and Color.
 type Color = int
 
 const (
@@ -125,10 +101,7 @@ const (
 	ColorBoth
 )
 
-/*
-MoveType is an allias type to avoid bothersome conversion between int and
-MoveType.
-*/
+// MoveType is an allias type to avoid bothersome conversion between int and MoveType.
 type MoveType = int
 
 const (
@@ -142,13 +115,11 @@ const (
 	MoveEnPassant
 )
 
-/*
-CastlingRights defines the player's rights to perform castlings.
-  - 0 bit: white king can O-O.
-  - 1 bit: white king can O-O-O.
-  - 2 bit: black king can O-O.
-  - 3 bit: black king can O-O-O.
-*/
+// CastlingRights defines the player's rights to perform castlings.
+//   - 0 bit: white king can O-O.
+//   - 1 bit: white king can O-O-O.
+//   - 2 bit: black king can O-O.
+//   - 3 bit: black king can O-O-O.
 type CastlingRights = int
 
 const (
@@ -158,9 +129,7 @@ const (
 	CastlingBlackLong  CastlingRights = 8
 )
 
-/*
-Result represents the possible outcomes of a chess game.
-*/
+// Result represents the possible outcomes of a chess game.
 type Result string
 
 const (
@@ -170,11 +139,9 @@ const (
 	ResultUnknown  Result = "*"
 )
 
-/*
-Termination represents the reason for the conclusion of the game.  While the
-Result types gives the result of the game, it does not provide any extra
-information and so the Termination type is defined for this purpose.
-*/
+// Termination represents the reason for the conclusion of the game.  While the
+// Result types gives the result of the game, it does not provide any extra
+// information and so the Termination type is defined for this purpose.
 type Termination string
 
 const (

@@ -1,7 +1,5 @@
-/*
-precalc.go contains declarations of precalculated attack tables, magic numbers,
-huffman codes, and other useful constants.
-*/
+// precalc.go contains declarations of precalculated attack tables, magic numbers,
+// huffman codes, and other useful constants.
 
 package chego
 

@@ -1,14 +1,10 @@
-/*
-position.go defines the Position structure and it's methods for chessboard state
-management.
-*/
+// position.go defines the Position structure and it's methods for chessboard
+// state management.
 
 package chego
 
-/*
-Position represents a chessboard state that can be converted to or parsed from
-the FEN string.
-*/
+// Position represents a chessboard state that can be converted to or parsed from
+// the FEN string.
 type Position struct {
 	Bitboards      [15]uint64
 	ActiveColor    Color
@@ -18,15 +14,13 @@ type Position struct {
 	FullmoveCnt    int
 }
 
-/*
-MakeMove modifies the position by applying the specified move.  It is the
-caller’s responsibility to ensure that the specified move is at least
-pseudo-legal.
-
-Not only is the piece placement updated, but also the entire position, including
-castling rights, en passant target, halfmove counter, fullmove counter, and the
-active color.
-*/
+// MakeMove modifies the position by applying the specified move.  It is the
+// caller’s responsibility to ensure that the specified move is at least
+// pseudo-legal.
+//
+// Not only is the piece placement updated, but also the entire position, including
+// castling rights, en passant target, halfmove counter, fullmove counter, and the
+// active color.
 func (p *Position) MakeMove(m Move, moved, captured Piece) {
 	to := uint64(1 << m.To())
 	from := uint64(1 << m.From())
@@ -138,10 +132,8 @@ func (p *Position) MakeMove(m Move, moved, captured Piece) {
 	p.ActiveColor ^= 1
 }
 
-/*
-GetPieceFromSquare returns the type of the piece that stands on the specified
-square, or [PieceNone] if the square is empty.
-*/
+// GetPieceFromSquare returns the type of the piece that stands on the specified
+// square, or [PieceNone] if the square is empty.
 func (p *Position) GetPieceFromSquare(square uint64) Piece {
 	for i := range p.Bitboards {
 		if square&p.Bitboards[i] != 0 {
@@ -151,15 +143,13 @@ func (p *Position) GetPieceFromSquare(square uint64) Piece {
 	return PieceNone
 }
 
-/*
-canCastle checks whether the king can peform castling in the specified direction.
-
-side represents a castling type:
-  - 1 -> White O-O.
-  - 2 -> White O-O-O.
-  - 4 -> Black O-O.
-  - 8 -> Black O-O-O.
-*/
+// canCastle checks whether the king can peform castling in the specified direction.
+//
+// side represents a castling type:
+//   - 1 -> White O-O.
+//   - 2 -> White O-O-O.
+//   - 4 -> Black O-O.
+//   - 8 -> Black O-O-O.
 func (p *Position) canCastle(side int, attacks, occupancy uint64) bool {
 	c := bitScan(uint64(side))
 	path := castlingPath[c]
@@ -168,10 +158,8 @@ func (p *Position) canCastle(side int, attacks, occupancy uint64) bool {
 		occupancy&path == 0
 }
 
-/*
-placePiece places the piece on the specified square as well as updates the
-occupancy and allies bitboards.
-*/
+// placePiece places the piece on the specified square as well as updates the
+// occupancy and allies bitboards.
 func (p *Position) placePiece(piece Piece, square uint64) {
 	// Place the piece.
 	p.Bitboards[piece] |= square
@@ -181,13 +169,11 @@ func (p *Position) placePiece(piece Piece, square uint64) {
 	p.Bitboards[14] |= square
 }
 
-/*
-removePiece removes the piece from the specified square as well as updates the
-occupancy and allies bitboards.
-
-NOTE: If a piece of the specified type is not present on the specified square,
-it will be placed rather than removed.
-*/
+// removePiece removes the piece from the specified square as well as updates the
+// occupancy and allies bitboards.
+//
+// NOTE: If a piece of the specified type is not present on the specified square,
+// it will be placed rather than removed.
 func (p *Position) removePiece(piece Piece, square uint64) {
 	// Remove the piece.
 	p.Bitboards[piece] ^= square
@@ -197,10 +183,8 @@ func (p *Position) removePiece(piece Piece, square uint64) {
 	p.Bitboards[14] ^= square
 }
 
-/*
-calculateMaterial calculates the piece valies of each side.  Used to determine
-a draw by insufficient material.
-*/
+// calculateMaterial calculates the piece valies of each side.  Used to determine
+// a draw by insufficient material.
 func (p *Position) calculateMaterial() (material int) {
 	for piece := range PieceWKing {
 		material += CountBits(p.Bitboards[piece]) * pieceWeights[piece]
@@ -208,10 +192,8 @@ func (p *Position) calculateMaterial() (material int) {
 	return material
 }
 
-/*
-zobristKey hashes the position into a 64-bit unsigned integer.   This allows
-positions to be used as lookup keys and stored or compared efficiently.
-*/
+// zobristKey hashes the position into a 64-bit unsigned integer.   This allows
+// positions to be used as lookup keys and stored or compared efficiently.
 func (p Position) zobristKey() (key uint64) {
 	for i := PieceWPawn; i <= PieceBKing; i++ {
 		for p.Bitboards[i] > 0 {

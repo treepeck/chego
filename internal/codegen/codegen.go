@@ -1,8 +1,6 @@
-/*
-codegen.go implements Huffman code generation.
-
-It is internal, as it is only used to precalculate Huffman codes.
-*/
+// codegen.go implements Huffman code generation.
+//
+// It is internal, as it is only used to precalculate Huffman codes.
 
 package main
 
@@ -27,9 +25,7 @@ var (
 	annotationEx = regexp.MustCompile(`[!?]{1,2}`)
 )
 
-/*
-workerPool manages the execution of a set of jobs by concurrent workers.
-*/
+// workerPool manages the execution of a set of jobs by concurrent workers.
 type workerPool struct {
 	sync.Mutex
 	wg      sync.WaitGroup
@@ -44,11 +40,9 @@ func newWorkerPool() *workerPool {
 	}
 }
 
-/*
-processGame processes a single movetext at a time by sequentially parsing and
-applying the specified moves and counting which index of strictly legal move
-list was actually played.
-*/
+// processGame processes a single movetext at a time by sequentially parsing and
+// applying the specified moves and counting which index of strictly legal move
+// list was actually played.
 func (p *workerPool) processGame() {
 	for {
 		movetext, ok := <-p.jobs
@@ -85,15 +79,13 @@ func (p *workerPool) processGame() {
 	}
 }
 
-/*
-clean reads from the specified reader line by line and extracts valid SAN move
-encodings into the writer.  Each output line will contain a sequence of SAN
-moves, separated by a single whitespace. This allows each game to be analyzed
-quickly and independently.
-
-Note: SAN moves appearing inside comments are also recognized as valid moves.
-Ensure that the input PGN file doesn't contain SAN moves within comments.
-*/
+// clean reads from the specified reader line by line and extracts valid SAN
+// move encodings into the writer.  Each output line will contain a sequence of
+// SAN moves, separated by a single whitespace. This allows each game to be
+// analyzed quickly and independently.
+//
+// Note: SAN moves appearing inside comments are also recognized as valid moves.
+// Ensure that the input PGN file doesn't contain SAN moves within comments.
 func clean(r *bufio.Reader, output *os.File) {
 	for {
 		line, err := r.ReadString('\n')
@@ -139,11 +131,9 @@ func clean(r *bufio.Reader, output *os.File) {
 	}
 }
 
-/*
-generate generates Huffman codes for indices of legal moves in a MoveList of
-strictly legal moves.  Based on data from the provided reader.  The input data
-must be clean and formed by the [clean] function.
-*/
+// generate generates Huffman codes for indices of legal moves in a MoveList of
+// strictly legal moves.  Based on data from the provided reader.  The input
+// data must be clean and formed by the [clean] function.
 func generate(r *bufio.Reader, output *os.File, workers int) {
 	numGames := 0
 	p := newWorkerPool()
@@ -192,9 +182,7 @@ func generate(r *bufio.Reader, output *os.File, workers int) {
 	fmt.Fprintf(output, "%d moves in tree\n", numMoves)
 }
 
-/*
-huffmanTree sorts the input array and builds the Huffman coding tree.
-*/
+// huffmanTree sorts the input array and builds the Huffman coding tree.
 func huffmanTree(results *[218]int) (codes [218]string) {
 	sorted := make([]*chego.Node, 0)
 	for i := range results {

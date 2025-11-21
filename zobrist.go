@@ -1,16 +1,12 @@
-/*
-zobrist.go implements Zobrist hashing algorithm to detect position repetitions.
-*/
+// zobrist.go implements Zobrist hashing algorithm to detect position repetitions.
 
 package chego
 
 import "math/rand/v2"
 
-/*
-Keys are used to hash each possible position into the unique number.  Each key
-is generated randomly and large enough, so the probability of hash collisions is
-negligible.
-*/
+// Keys are used to hash each possible position into the unique number.  Each key
+// is generated randomly and large enough, so the probability of hash collisions is
+// negligible.
 var (
 	pieceKeys [12][64]uint64
 	// Used only when black is the active color.
@@ -20,13 +16,11 @@ var (
 	colorKey uint64
 )
 
-/*
-InitZobristKeys initializes the pseudo-random keys used in the Zobrist hashing
-scheme.  Call this function ONCE as close as possible to the start of your
-program.
-
-NOTE: Threefold repetitions will not be detected if this funtcion wasn't called.
-*/
+// InitZobristKeys initializes the pseudo-random keys used in the Zobrist hashing
+// scheme.  Call this function ONCE as close as possible to the start of your
+// program.
+//
+// NOTE: Threefold repetitions will not be detected if this funtcion wasn't called.
 func InitZobristKeys() {
 	for i := PieceWPawn; i <= PieceBKing; i++ {
 		for square := range 64 {

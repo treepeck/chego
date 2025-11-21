@@ -1,9 +1,7 @@
 package chego
 
-/*
-TraversePreOrder traverses the tree in pre-order, starting from the specified
-node.
-*/
+// TraversePreOrder traverses the tree in pre-order, starting from the specified
+// node.
 func TraversePreOrder(n *Node, codes *[218]string, current string) {
 	if n == nil {
 		return
