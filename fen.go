@@ -1,29 +1,46 @@
-// fen.go implements conversions between Forsyth-Edwards Notation (FEN) strings
-// and bitboard arrays.  Functions in this file expect the passed FEN strings
-// and bitboard arrays to be valid, and may panic if they aren't.
-//
-// Each FEN string consists of six parts, separated by a space:
-//  1. Piece placement: will be parsed into the array of bitboards.
-//  2. Active color:
-// 	"w" means that White is to move;
-// 	"b" means that Black is to move.
-//  3. Castling rights: if neither side has the ability to castle,
-// 	this field uses the character "-".
-//  4. En passant target square: if there is no en passant target square,
-// 	this field uses the character "-".
-//  5. Halfmove clock: used for the fifty-move rule.
-//  6. Fullmove number: The number of the full moves.
-
 package chego
 
 import (
 	"strconv"
-
 	"strings"
 )
 
-// ParseFEN parses the given FEN string into a [Position].  It's a caller's
+// FEN of the standard initial chess position.
+const InitialPos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+
+var (
+	// Square2String maps each board square to its string representation.
+	Square2String = [64]string{
+		"a1", "b1", "c1", "d1", "e1", "f1", "g1", "h1",
+		"a2", "b2", "c2", "d2", "e2", "f2", "g2", "h2",
+		"a3", "b3", "c3", "d3", "e3", "f3", "g3", "h3",
+		"a4", "b4", "c4", "d4", "e4", "f4", "g4", "h4",
+		"a5", "b5", "c5", "d5", "e5", "f5", "g5", "h5",
+		"a6", "b6", "c6", "d6", "e6", "f6", "g6", "h6",
+		"a7", "b7", "c7", "d7", "e7", "f7", "g7", "h7",
+		"a8", "b8", "c8", "d8", "e8", "f8", "g8", "h8",
+	}
+	// PieceSymbols maps each piece type to its symbol.
+	PieceSymbols = [12]byte{
+		'P', 'p', 'N', 'n', 'B', 'b',
+		'R', 'r', 'Q', 'q', 'K', 'k',
+	}
+)
+
+// ParseFEN parses the given FEN string into a [Position].  It's the caller's
 // responsibility to validate the provided FEN string.
+//
+// Each FEN string consists of six parts, separated by a space:
+//  1. Piece placement: will be parsed into the array of bitboards.
+//  2. Active color:
+//     "w" means that White is to move;
+//     "b" means that Black is to move.
+//  3. Castling rights: if neither side has the ability to castle,
+//     this field uses the character "-".
+//  4. En passant target square: if there is no en passant target square,
+//     this field uses the character "-".
+//  5. Halfmove clock: used for the fifty-move rule.
+//  6. Fullmove number: The number of the full moves.
 func ParseFEN(fen string) (p Position) {
 	// Separate FEN fields.
 	fields := strings.SplitN(fen, " ", 6)
@@ -52,7 +69,11 @@ func ParseFEN(fen string) (p Position) {
 	}
 
 	// Parse en passant target square.
-	p.EPTarget = string2Square(fields[3])
+	for i := range Square2String {
+		if Square2String[i] == fields[3] {
+			p.EPTarget = i
+		}
+	}
 
 	// Parse halfmove counter.
 	var err error
@@ -70,7 +91,8 @@ func ParseFEN(fen string) (p Position) {
 	return p
 }
 
-// SerializeFEN serializes the specified [Position] into a FEN string.
+// SerializeFEN serializes the specified [Position] into a FEN string.  It's
+// the caller's responsibility to validate the provided position.
 func SerializeFEN(p Position) string {
 	var fen strings.Builder
 	fen.Grow(64)
@@ -235,29 +257,4 @@ func SerializeBitboards(bitboards [15]uint64) string {
 	}
 
 	return b.String()
-}
-
-// string2Square parses the given string into a square index. Handles "-" as A1 square.
-func string2Square(str string) int {
-	square := 0
-	switch str[0] {
-	case 'b':
-		square = 1
-	case 'c':
-		square = 2
-	case 'd':
-		square = 3
-	case 'e':
-		square = 4
-	case 'f':
-		square = 5
-	case 'g':
-		square = 6
-	case 'h':
-		square = 7
-	case '-':
-		return SA1
-	}
-
-	return square + (int(str[1]-'0')-1)*8
 }

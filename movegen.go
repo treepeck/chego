@@ -10,26 +10,67 @@ package chego
 
 const (
 	// Bitmask of all files except the A.
-	NOT_A_FILE uint64 = 0xFEFEFEFEFEFEFEFE
+	notAFile uint64 = 0xFEFEFEFEFEFEFEFE
 	// Bitmask of all files except the H.
-	NOT_H_FILE uint64 = 0x7F7F7F7F7F7F7F7F
+	notHFile uint64 = 0x7F7F7F7F7F7F7F7F
 	// Bitmask of all files except the A and B.
-	NOT_AB_FILE uint64 = 0xFCFCFCFCFCFCFCFC
+	notABFile uint64 = 0xFCFCFCFCFCFCFCFC
 	// Bitmask of all files except the G and H.
-	NOT_GH_FILE uint64 = 0x3F3F3F3F3F3F3F3F
+	notGHFile uint64 = 0x3F3F3F3F3F3F3F3F
 	// Bitmask of all ranks except first.
-	NOT_1ST_RANK uint64 = 0xFFFFFFFFFFFFFF00
+	not1stRank uint64 = 0xFFFFFFFFFFFFFF00
 	// Bitmask of all ranks except eighth.
-	NOT_8TH_RANK uint64 = 0x00FFFFFFFFFFFFFF
+	not8thRank uint64 = 0x00FFFFFFFFFFFFFF
 	// Bitmask of the first rank.
-	RANK_1 uint64 = 0xFF
+	rank1 uint64 = 0xFF
 	// Bitmask of the second rank.
-	RANK_2 uint64 = 0xFF00
+	rank2 uint64 = 0xFF00
 	// Bitmask of the seventh rank.
-	RANK_7 uint64 = 0xFF000000000000
+	rank7 uint64 = 0xFF000000000000
 	// Bitmask of the eighth rank.
-	RANK_8 uint64 = 0xFF00000000000000
+	rank8 uint64 = 0xFF00000000000000
 )
+
+// Move represents a chess move, encoded as a 16 bit unsigned integer:
+//   - 0-5:   To (destination) square index.
+//   - 6-11:  From (origin/source) square index.
+//   - 12-13: Promotion piece (see [PromotionFlag]).
+//   - 14-15: Move type (see [MoveType]).
+type Move uint16
+
+// NewMove creates a new move with the promotion piece set to [PromotionQueen].
+func NewMove(to, from, moveType int) Move {
+	return Move(to | (from << 6) | (PromotionQueen << 12) | (moveType << 14))
+}
+
+// NewPromotionMove creates a new move with the promotion type and specified
+// promotion piece.
+func NewPromotionMove(to, from, promoPiece int) Move {
+	return Move(to | (from << 6) | (promoPiece << 12) | (MovePromotion << 14))
+}
+
+func (m Move) To() int                   { return int(m & 0x3F) }
+func (m Move) From() int                 { return int(m>>6) & 0x3F }
+func (m Move) PromoPiece() PromotionFlag { return PromotionFlag(m>>12) & 0x3 }
+func (m Move) Type() MoveType            { return MoveType(m>>14) & 0x3 }
+
+// MoveList is used to store moves.  The main idea behind it is to preallocate
+// an array with enough capacity to store all possible moves and avoid dynamic
+// memory allocations.
+type MoveList struct {
+	// Maximum number of moves per chess position is equal to 218,
+	// hence 218 elements.
+	// See https://www.talkchess.com/forum/viewtopic.php?t=61792
+	Moves [218]Move
+	// To keep track of the next move index.
+	LastMoveIndex byte
+}
+
+// Push adds the move to the end of the move list.
+func (l *MoveList) Push(m Move) {
+	l.Moves[l.LastMoveIndex] = m
+	l.LastMoveIndex++
+}
 
 // InitAttackTables initializes the predefined attack tables.  Call this function
 // ONCE as close as possible to the start of your program.
@@ -181,11 +222,11 @@ func genPawnMoves(p Position, l *MoveList) {
 	pawns := p.Bitboards[PieceWPawn+p.ActiveColor]
 
 	// Determine movement direction.
-	dir, initRank, promoRank := 8, RANK_2, RANK_8
+	dir, initRank, promoRank := 8, rank2, rank8
 	if p.ActiveColor == ColorBlack {
 		dir = -8
-		initRank = RANK_7
-		promoRank = RANK_1
+		initRank = rank7
+		promoRank = rank1
 	}
 
 	for pawns > 0 {
@@ -304,10 +345,10 @@ func genAttacks(bitboards [15]uint64, c Color) (attacks uint64) {
 // To get attacks for a single pawn, use the pawnAttacks lookup table.
 func genPawnAttacks(pawn uint64, color Color) uint64 {
 	if color == ColorWhite {
-		return (pawn & NOT_A_FILE << 7) | (pawn & NOT_H_FILE << 9)
+		return (pawn & notAFile << 7) | (pawn & notHFile << 9)
 	}
 	// Handle black pawns.
-	return (pawn & NOT_A_FILE >> 9) | (pawn & NOT_H_FILE >> 7)
+	return (pawn & notAFile >> 9) | (pawn & notHFile >> 7)
 }
 
 // genKnightAttacks returns a bitboard of squares attacked by knights.
@@ -315,26 +356,26 @@ func genPawnAttacks(pawn uint64, color Color) uint64 {
 // Use this function only to generate attacks for multiple knights simultaneously.
 // To get attacks for a single knight, use the knightAttacks lookup table.
 func genKnightAttacks(knight uint64) uint64 {
-	return (knight & NOT_A_FILE >> 17) |
-		(knight & NOT_H_FILE >> 15) |
-		(knight & NOT_AB_FILE >> 10) |
-		(knight & NOT_GH_FILE >> 6) |
-		(knight & NOT_AB_FILE << 6) |
-		(knight & NOT_GH_FILE << 10) |
-		(knight & NOT_A_FILE << 15) |
-		(knight & NOT_H_FILE << 17)
+	return (knight & notAFile >> 17) |
+		(knight & notHFile >> 15) |
+		(knight & notABFile >> 10) |
+		(knight & notGHFile >> 6) |
+		(knight & notABFile << 6) |
+		(knight & notGHFile << 10) |
+		(knight & notAFile << 15) |
+		(knight & notHFile << 17)
 }
 
 // genKingAttacks returns a bitboard of squares attacked by a king.
 func genKingAttacks(king uint64) uint64 {
-	return (king & NOT_A_FILE >> 9) |
+	return (king & notAFile >> 9) |
 		(king >> 8) |
-		(king & NOT_H_FILE >> 7) |
-		(king & NOT_A_FILE >> 1) |
-		(king & NOT_H_FILE << 1) |
-		(king & NOT_A_FILE << 7) |
+		(king & notHFile >> 7) |
+		(king & notAFile >> 1) |
+		(king & notHFile << 1) |
+		(king & notAFile << 7) |
 		(king << 8) |
-		(king & NOT_H_FILE << 9)
+		(king & notHFile << 9)
 }
 
 // genBishopAttacks returns a bitboard of squares attacked by a bishop.
@@ -343,28 +384,28 @@ func genKingAttacks(king uint64) uint64 {
 // The resulting bitboard includes the occupied squares.  This function cannot
 // generate attacks for multiple bishops simultaneously.
 func genBishopAttacks(bishop, occupancy uint64) (attacks uint64) {
-	for i := bishop & NOT_A_FILE >> 9; i&NOT_H_FILE != 0; i >>= 9 {
+	for i := bishop & notAFile >> 9; i&notHFile != 0; i >>= 9 {
 		attacks |= i
 		if i&occupancy != 0 {
 			break
 		}
 	}
 
-	for i := bishop & NOT_H_FILE >> 7; i&NOT_A_FILE != 0; i >>= 7 {
+	for i := bishop & notHFile >> 7; i&notAFile != 0; i >>= 7 {
 		attacks |= i
 		if i&occupancy != 0 {
 			break
 		}
 	}
 
-	for i := bishop & NOT_A_FILE << 7; i&NOT_H_FILE != 0; i <<= 7 {
+	for i := bishop & notAFile << 7; i&notHFile != 0; i <<= 7 {
 		attacks |= i
 		if i&occupancy != 0 {
 			break
 		}
 	}
 
-	for i := bishop & NOT_H_FILE << 9; i&NOT_A_FILE != 0; i <<= 9 {
+	for i := bishop & notHFile << 9; i&notAFile != 0; i <<= 9 {
 		attacks |= i
 		if i&occupancy != 0 {
 			break
@@ -380,28 +421,28 @@ func genBishopAttacks(bishop, occupancy uint64) (attacks uint64) {
 // The resulting bitboard includes the occupied squares.  This function cannot
 // generate attacks for multiple rooks simultaneously.
 func genRookAttacks(rook, occupancy uint64) (attacks uint64) {
-	for i := rook & NOT_A_FILE >> 1; i&NOT_H_FILE != 0; i >>= 1 {
+	for i := rook & notAFile >> 1; i&notHFile != 0; i >>= 1 {
 		attacks |= i
 		if i&occupancy != 0 {
 			break
 		}
 	}
 
-	for i := rook & NOT_H_FILE << 1; i&NOT_A_FILE != 0; i <<= 1 {
+	for i := rook & notHFile << 1; i&notAFile != 0; i <<= 1 {
 		attacks |= i
 		if i&occupancy != 0 {
 			break
 		}
 	}
 
-	for i := rook & NOT_1ST_RANK >> 8; i&NOT_8TH_RANK != 0; i >>= 8 {
+	for i := rook & not1stRank >> 8; i&not8thRank != 0; i >>= 8 {
 		attacks |= i
 		if i&occupancy != 0 {
 			break
 		}
 	}
 
-	for i := rook & NOT_8TH_RANK << 8; i&NOT_1ST_RANK != 0; i <<= 8 {
+	for i := rook & not8thRank << 8; i&not1stRank != 0; i <<= 8 {
 		attacks |= i
 		if i&occupancy != 0 {
 			break
@@ -416,27 +457,27 @@ func genRookAttacks(rook, occupancy uint64) (attacks uint64) {
 // generating legal moves of a bishop.
 func initBishopOccupancy() {
 	// Helper constants.
-	const not_A_not_1st = NOT_A_FILE & NOT_1ST_RANK
-	const not_H_not_1st = NOT_H_FILE & NOT_1ST_RANK
-	const not_A_not_8th = NOT_A_FILE & NOT_8TH_RANK
-	const not_H_not_8th = NOT_H_FILE & NOT_8TH_RANK
+	const not_A_not_1st = notAFile & not1stRank
+	const not_H_not_1st = notHFile & not1stRank
+	const not_A_not_8th = notAFile & not8thRank
+	const not_H_not_8th = notHFile & not8thRank
 
 	for square := range 64 {
 		var occupancy, bishop uint64 = 0, 1 << square
 
-		for i := bishop & NOT_A_FILE >> 9; i&not_A_not_1st != 0; i >>= 9 {
+		for i := bishop & notAFile >> 9; i&not_A_not_1st != 0; i >>= 9 {
 			occupancy |= i
 		}
 
-		for i := bishop & NOT_H_FILE >> 7; i&not_H_not_1st != 0; i >>= 7 {
+		for i := bishop & notHFile >> 7; i&not_H_not_1st != 0; i >>= 7 {
 			occupancy |= i
 		}
 
-		for i := bishop & NOT_A_FILE << 7; i&not_A_not_8th != 0; i <<= 7 {
+		for i := bishop & notAFile << 7; i&not_A_not_8th != 0; i <<= 7 {
 			occupancy |= i
 		}
 
-		for i := bishop & NOT_H_FILE << 9; i&not_H_not_8th != 0; i <<= 9 {
+		for i := bishop & notHFile << 9; i&not_H_not_8th != 0; i <<= 9 {
 			occupancy |= i
 		}
 
@@ -451,19 +492,19 @@ func initRookOccupancy() {
 	for square := range 64 {
 		var occupancy, rook uint64 = 0, 1 << square
 
-		for i := rook & NOT_1ST_RANK >> 8; i&NOT_1ST_RANK != 0; i >>= 8 {
+		for i := rook & not1stRank >> 8; i&not1stRank != 0; i >>= 8 {
 			occupancy |= i
 		}
 
-		for i := rook & NOT_A_FILE >> 1; i&NOT_A_FILE != 0; i >>= 1 {
+		for i := rook & notAFile >> 1; i&notAFile != 0; i >>= 1 {
 			occupancy |= i
 		}
 
-		for i := rook & NOT_H_FILE << 1; i&NOT_H_FILE != 0; i <<= 1 {
+		for i := rook & notHFile << 1; i&notHFile != 0; i <<= 1 {
 			occupancy |= i
 		}
 
-		for i := rook & NOT_8TH_RANK << 8; i&NOT_8TH_RANK != 0; i <<= 8 {
+		for i := rook & not8thRank << 8; i&not8thRank != 0; i <<= 8 {
 			occupancy |= i
 		}
 
@@ -476,7 +517,7 @@ func initRookOccupancy() {
 func genOccupancy(key, relevantBitCount int,
 	relevantOccupancy uint64) (occupancy uint64) {
 
-	for i := 0; i < relevantBitCount; i++ {
+	for i := range relevantBitCount {
 		square := popLSB(&relevantOccupancy)
 
 		if key&(1<<i) != 0 {

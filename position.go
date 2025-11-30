@@ -1,7 +1,21 @@
-// position.go defines the Position structure and it's methods for chessboard
-// state management.
-
 package chego
+
+var (
+	// Each piece weight used to calculate material on the board.
+	// Use Piece type as index to get it's weight.
+	pieceWeights = [10]int{1, 1, 3, 3, 3, 3, 5, 5, 9, 9}
+	// Each path includes the king square.
+	// 0 : White O-O castling path.
+	// 1 : White O-O-O castling path.
+	// 2 : Black O-O castling path.
+	// 3 : Black O-O-O castling path.
+	castlingPath = [4]uint64{
+		0x70, 0x1E, 0x7000000000000000, 0x1E00000000000000,
+	}
+	castlingAttackPath = [4]uint64{
+		0x70, 0x1C, 0x7000000000000000, 0x1C00000000000000,
+	}
+)
 
 // Position represents a chessboard state that can be converted to or parsed from
 // the FEN string.
