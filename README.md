@@ -69,12 +69,12 @@ go run ./internal/perft/perft.go -depth {IntValue}
 Chego generates 119060324 moves at depth 6 in approximately 6 seconds on an<br/>
 Intel i7-10750H CPU.
 
-## Generate Huffman codes
+## Compression
 
 Chego allows to generate Huffman codes for legal moves, which helps to compress<br/>
 the completed move storage and drastically reduce the size of database.
 
-1. Download the PGN file containing one or more games (more is better).
+1. Download the PGN file containing one or more games (https://database.lichess.org/).
 
 2. Prepare the file to code generation by executing this command in the chego folder:
 
