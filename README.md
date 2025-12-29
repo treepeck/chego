@@ -32,10 +32,6 @@ import (
 )
 
 func main() {
-	// It is important to call InitAttackTables as close to the program
-	// start as possible, otherwise the move generation won't work.
-	chego.InitAttackTables()
-
 	g := chego.NewGame()
 	// Scholar's mate.
 	g.PushMove(chego.NewMove(chego.SF3, chego.SF2, chego.MoveNormal))
