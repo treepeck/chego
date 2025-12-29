@@ -121,10 +121,6 @@ func perftVerbose(p chego.Position, depth int, r *result, isRoot bool) int {
 
 // main runs the perft and measures it's execution time.
 func main() {
-	// It is important to initialize the attack tables.
-	// Otherwise, perft will not work.
-	chego.InitAttackTables()
-
 	depth := flag.Int("depth", 1, "Performance test depth")
 	verbose := flag.Bool("verbose", false, "Wether to print the debug info")
 	cpuprofile := flag.String("cpuprofile", "", "File to write a cpu profile")

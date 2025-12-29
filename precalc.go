@@ -180,4 +180,13 @@ var (
 		11, 10, 10, 10, 10, 10, 10, 11,
 		12, 11, 11, 11, 11, 11, 11, 12,
 	}
+	// Keys are used to hash each possible position into the unique number.  Each key
+	// is generated randomly and large enough, so the probability of hash collisions is
+	// negligible.
+	pieceKeys [12][64]uint64
+	// Used only when black is the active color.
+	epKeys       [64]uint64
+	castlingKeys [16]uint64
+	// Used only when black is the active color.
+	colorKey uint64
 )

@@ -64,12 +64,6 @@ func BenchmarkLookupQueenAttacks(b *testing.B) {
 	}
 }
 
-// func BenchmarkGenPawnMoves(b *testing.B) {
-// 	for i := 0; i < b.N; i++ {
-// 		genPawnMoves(SE4, 0x0, 0x0, 0, ColorWhite, &MoveList{})
-// 	}
-// }
-
 func BenchmarkGenKingMoves(b *testing.B) {
 	pos := ParseFEN("8/8/8/8/8/8/8/R3K2R w - - 0 1")
 
@@ -89,6 +83,6 @@ func BenchmarkGenLegalMoves(b *testing.B) {
 
 func BenchmarkInitAttackTables(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		InitAttackTables()
+		initAttackTables()
 	}
 }

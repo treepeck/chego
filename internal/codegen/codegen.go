@@ -244,8 +244,6 @@ func huffmanTree(results *[218]int) (codes [218]string) {
 }
 
 func main() {
-	chego.InitAttackTables()
-
 	input := flag.String("input", "clean.txt", "Path to the input file")
 
 	workers := flag.Int("workers", 1, "Number of concurrent routines which will perform the task")

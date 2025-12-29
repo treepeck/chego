@@ -1,17 +1,8 @@
 package chego
 
 import (
-	"os"
 	"testing"
 )
-
-func TestMain(m *testing.M) {
-	// Setup.
-	InitAttackTables()
-	InitZobristKeys()
-	// Tests and benchmarks execution.
-	os.Exit(m.Run())
-}
 
 func TestIsThreefoldRepetition(t *testing.T) {
 	testcases := []struct {
