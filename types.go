@@ -88,30 +88,6 @@ const (
 	CastlingBlackLong  CastlingRights = 8
 )
 
-// Result represents the possible outcomes of a chess game.
-type Result string
-
-const (
-	ResultWhiteWon Result = "0-1"
-	ResultBlackWon Result = "1-0"
-	ResultDraw     Result = "1/2-1/2"
-	ResultUnknown  Result = "*"
-)
-
-// Termination represents the reason for the conclusion of the game.  While the
-// Result types gives the result of the game, it does not provide any extra
-// information and so the Termination type is defined for this purpose.
-type Termination string
-
-const (
-	TerminationAbandoned       Termination = "abandoned"
-	TerminationAdjudication    Termination = "adjudication"
-	TerminationNormal          Termination = "normal"
-	TerminationRulesInfraction Termination = "rules infraction"
-	TerminationTimeForfeit     Termination = "time forfeit"
-	TerminationUnterminated    Termination = "unterminated"
-)
-
 // Bitboards of each square.
 const (
 	A1 uint64 = 1 << iota
