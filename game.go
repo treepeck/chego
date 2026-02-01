@@ -5,13 +5,10 @@ package chego
 // Game represents a game state that can be converted to or parsed from the PGN
 // string.
 //
-// It's the user's responsibility to spin up a time.Ticker and handle time ticks
-// by calling the [DecrementTime] function.  The value of timeBonus is added to
-// the player's timer during the [PushMove] function, so the user must ensure that
-// time ticks and moves are not handled concurrently (prevent race conditions).
-//
-// NOTE: Call [InitAttackTables] and [InitZobristKeys] ONCE before creating a
-// [Game].
+// It's the user's responsibility to spin up a time.Ticker and handle time ticks.
+// The value of timeBonus is added to the player's timer during the [PushMove]
+// function, so the user must ensure that time ticks and moves are not handled
+// concurrently (prevent race conditions).
 type Game struct {
 	LegalMoves MoveList
 	position   Position
