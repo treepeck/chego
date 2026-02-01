@@ -15,6 +15,8 @@ type Game struct {
 	// Repetition keys are stored as a map of Zobrist keys to the number of
 	// times each position has occurred.
 	repetitions map[uint64]int
+	Result      Result
+	Termination Termination
 	WhiteTime   int
 	BlackTime   int
 	TimeBonus   int
@@ -24,6 +26,8 @@ func NewGame() *Game {
 	g := &Game{
 		position:    ParseFEN(InitialPos),
 		repetitions: make(map[uint64]int, 1),
+		Result:      ResultUnknown,
+		Termination: TerminationUnterminated,
 	}
 
 	GenLegalMoves(g.position, &g.LegalMoves)
