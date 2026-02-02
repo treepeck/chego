@@ -67,7 +67,7 @@ func initRookOccupancy() {
 // initZobristKeys initializes the pseudo-random keys used in the Zobrist
 // hashing scheme.
 func initZobristKeys() {
-	for i := PieceWPawn; i <= PieceBKing; i++ {
+	for i := WPawn; i <= BKing; i++ {
 		for square := range 64 {
 			pieceKeys[i][square] = rand.Uint64()
 		}

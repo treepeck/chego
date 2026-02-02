@@ -34,21 +34,21 @@ func Move2SAN(m Move, p *Position, lm *MoveList) string {
 		}
 	} else {
 		switch moved {
-		case PieceWKnight, PieceBKnight:
+		case WKnight, BKnight:
 			b.WriteByte('N')
-		case PieceWBishop, PieceBBishop:
+		case WBishop, BBishop:
 			b.WriteByte('B')
-		case PieceWRook, PieceBRook:
+		case WRook, BRook:
 			b.WriteByte('R')
-		case PieceWQueen, PieceBQueen:
+		case WQueen, BQueen:
 			b.WriteByte('Q')
-		case PieceWKing, PieceBKing:
+		case WKing, BKing:
 			b.WriteByte('K')
 		}
 
 		// Resolve the ambiguity if needed.  Skip the pawns since their moves
 		// are always ambiguous.
-		if moved > PieceBPawn {
+		if moved > BPawn {
 			// Find and store all ambiguities.
 			ambiguities := make([]int, 0)
 			for i := range lm.LastMoveIndex {
@@ -66,7 +66,7 @@ func Move2SAN(m Move, p *Position, lm *MoveList) string {
 		}
 
 		if captured != PieceNone || m.Type() == MoveEnPassant {
-			if moved <= PieceBPawn {
+			if moved <= BPawn {
 				b.WriteByte(Square2String[m.From()][0])
 			}
 			b.WriteByte('x')
@@ -109,7 +109,7 @@ func Move2SAN(m Move, p *Position, lm *MoveList) string {
 
 	// The move is check if the opponent's king is under attack.
 	isCheck := genAttacks(p.Bitboards, 1^p.ActiveColor)&
-		p.Bitboards[PieceWKing+(p.ActiveColor)] != 0
+		p.Bitboards[WKing+(p.ActiveColor)] != 0
 
 	if isCheck && lm.LastMoveIndex == 0 {
 		// If the move results in checkmate, append the '#' symbol to the SAN.

@@ -166,31 +166,31 @@ func ParseBitboards(piecePlacement string) (bitboards [15]uint64) {
 			// Convert byte to the integer it represents.
 			square += int(char - '0')
 		} else { // There is piece on a square.
-			piece := PieceWPawn
+			piece := WPawn
 			// Manual switch construction is ~3x faster than map approach.
 			switch char {
 			case 'N':
-				piece = PieceWKnight
+				piece = WKnight
 			case 'B':
-				piece = PieceWBishop
+				piece = WBishop
 			case 'R':
-				piece = PieceWRook
+				piece = WRook
 			case 'Q':
-				piece = PieceWQueen
+				piece = WQueen
 			case 'K':
-				piece = PieceWKing
+				piece = WKing
 			case 'p':
-				piece = PieceBPawn
+				piece = BPawn
 			case 'n':
-				piece = PieceBKnight
+				piece = BKnight
 			case 'b':
-				piece = PieceBBishop
+				piece = BBishop
 			case 'r':
-				piece = PieceBRook
+				piece = BRook
 			case 'q':
-				piece = PieceBQueen
+				piece = BQueen
 			case 'k':
-				piece = PieceBKing
+				piece = BKing
 			}
 			// Set the bit on the bitboards to place a piece.
 			bb := uint64(1 << square)
@@ -219,7 +219,7 @@ func SerializeBitboards(bitboards [15]uint64) string {
 
 	board := [64]byte{}
 
-	for i := 0; i <= PieceBKing; i++ {
+	for i := 0; i <= BKing; i++ {
 		// Go through all pieces on a bitboard.
 		for bitboards[i] > 0 {
 			square := popLSB(&bitboards[i])

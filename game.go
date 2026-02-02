@@ -2,8 +2,7 @@
 
 package chego
 
-// Game represents a game state that can be converted to or parsed from the PGN
-// string.
+// Game represents the state of a chess game.
 //
 // It's the user's responsibility to spin up a time.Ticker and handle time ticks.
 // The value of timeBonus is added to the player's timer during the [PushMove]
@@ -26,8 +25,8 @@ func NewGame() *Game {
 	g := &Game{
 		position:    ParseFEN(InitialPos),
 		repetitions: make(map[uint64]int, 1),
-		Result:      ResultUnknown,
-		Termination: TerminationUnterminated,
+		Result:      Unknown,
+		Termination: Unterminated,
 	}
 
 	GenLegalMoves(g.position, &g.LegalMoves)
@@ -54,7 +53,7 @@ func (g *Game) PushMove(m Move) string {
 	// Clear the repetitions map after applying the irreversable move.
 	// See https://www.chessprogramming.org/Irreversible_Moves
 	if isCapture || m.Type() == MoveCastling || m.Type() == MovePromotion ||
-		moved <= PieceBPawn {
+		moved <= BPawn {
 		clear(g.repetitions)
 	}
 
@@ -94,21 +93,21 @@ func (g *Game) IsInsufficientMaterial() bool {
 	dark := uint64(0xAA55AA55AA55AA55)
 	material := g.position.calculateMaterial()
 
-	if material == 0 || (material == 3 && g.position.Bitboards[PieceWPawn] == 0 &&
-		g.position.Bitboards[PieceBPawn] == 0) {
+	if material == 0 || (material == 3 && g.position.Bitboards[WPawn] == 0 &&
+		g.position.Bitboards[BPawn] == 0) {
 		return true
 	}
 
 	if material == 6 {
-		wb := g.position.Bitboards[PieceWBishop]
-		bb := g.position.Bitboards[PieceBBishop]
+		wb := g.position.Bitboards[WBishop]
+		bb := g.position.Bitboards[BBishop]
 
 		// If there are two bishops both standing on the same colored squares.
 		return (wb != 0 && bb != 0 && ((wb&dark > 0 && bb&dark > 0) ||
 			(wb&dark == 0 && bb&dark == 0))) ||
 			// Or if there are two knights.
-			(g.position.Bitboards[PieceWKnight] != 0 &&
-				g.position.Bitboards[PieceBKnight] != 0)
+			(g.position.Bitboards[WKnight] != 0 &&
+				g.position.Bitboards[BKnight] != 0)
 	}
 	return false
 }

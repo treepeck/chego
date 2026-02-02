@@ -108,25 +108,25 @@ func GenLegalMoves(p Position, l *MoveList) {
 // GenChecksCounter returns the number of the pieces of the specified color that
 // are delivering a check to the enemy king.
 func GenChecksCounter(bitboards [15]uint64, c Color) (cnt int) {
-	king := bitScan(bitboards[PieceWKing+(1^c)])
+	king := bitScan(bitboards[WKing+(1^c)])
 
-	if pawnAttacks[1^c][king]&bitboards[PieceWPawn+c] != 0 {
+	if pawnAttacks[1^c][king]&bitboards[WPawn+c] != 0 {
 		cnt++
 	}
 
-	if knightAttacks[king]&bitboards[PieceWKnight+c] != 0 {
+	if knightAttacks[king]&bitboards[WKnight+c] != 0 {
 		cnt++
 	}
 
-	if lookupBishopAttacks(king, bitboards[14])&bitboards[PieceWBishop+c] != 0 {
+	if lookupBishopAttacks(king, bitboards[14])&bitboards[WBishop+c] != 0 {
 		cnt++
 	}
 
-	if lookupRookAttacks(king, bitboards[14])&bitboards[PieceWRook+c] != 0 {
+	if lookupRookAttacks(king, bitboards[14])&bitboards[WRook+c] != 0 {
 		cnt++
 	}
 
-	if lookupQueenAttacks(king, bitboards[14])&bitboards[PieceWQueen+c] != 0 {
+	if lookupQueenAttacks(king, bitboards[14])&bitboards[WQueen+c] != 0 {
 		cnt++
 	}
 
@@ -136,10 +136,10 @@ func GenChecksCounter(bitboards [15]uint64, c Color) (cnt int) {
 // genKingMoves appends legal moves for the king on the given position to the
 // specified move list.  Handles special king move - castling.
 func genKingMoves(p Position, l *MoveList) {
-	kingBB := p.Bitboards[PieceWKing+p.ActiveColor]
-	p.removePiece(PieceWKing+p.ActiveColor, kingBB)
+	kingBB := p.Bitboards[WKing+p.ActiveColor]
+	p.removePiece(WKing+p.ActiveColor, kingBB)
 	attacks := genAttacks(p.Bitboards, 1^p.ActiveColor)
-	p.removePiece(PieceWKing+p.ActiveColor, kingBB)
+	p.removePiece(WKing+p.ActiveColor, kingBB)
 	king := bitScan(kingBB)
 
 	dests := kingAttacks[king] & (^attacks) & (^p.Bitboards[12+p.ActiveColor])
@@ -152,20 +152,20 @@ func genKingMoves(p Position, l *MoveList) {
 	// Handle castling.
 	if p.ActiveColor == ColorWhite {
 		if p.canCastle(CastlingWhiteShort, attacks, p.Bitboards[14]) &&
-			p.Bitboards[PieceWRook]&H1 != 0 {
+			p.Bitboards[WRook]&H1 != 0 {
 			l.Push(NewMove(SG1, king, MoveCastling))
 		}
 		if p.canCastle(CastlingWhiteLong, attacks, p.Bitboards[14]) &&
-			p.Bitboards[PieceWRook]&A1 != 0 {
+			p.Bitboards[WRook]&A1 != 0 {
 			l.Push(NewMove(SC1, king, MoveCastling))
 		}
 	} else {
 		if p.canCastle(CastlingBlackShort, attacks, p.Bitboards[14]) &&
-			p.Bitboards[PieceBRook]&H8 != 0 {
+			p.Bitboards[BRook]&H8 != 0 {
 			l.Push(NewMove(SG8, king, MoveCastling))
 		}
 		if p.canCastle(CastlingBlackLong, attacks, p.Bitboards[14]) &&
-			p.Bitboards[PieceBRook]&A8 != 0 {
+			p.Bitboards[BRook]&A8 != 0 {
 			l.Push(NewMove(SC8, king, MoveCastling))
 		}
 	}
@@ -180,7 +180,7 @@ func genPawnMoves(p Position, l *MoveList) {
 		ep = 1 << p.EPTarget
 	}
 	enemies := p.Bitboards[12+(1^p.ActiveColor)]
-	pawns := p.Bitboards[PieceWPawn+p.ActiveColor]
+	pawns := p.Bitboards[WPawn+p.ActiveColor]
 
 	// Determine movement direction.
 	dir, initRank, promoRank := 8, rank2, rank8
@@ -241,20 +241,20 @@ func genNormalMoves(p Position, l *MoveList) {
 	allies := p.Bitboards[12+c]
 	occupancy := p.Bitboards[14]
 
-	for i := PieceWKnight + c; i <= PieceWQueen+c; i += 2 {
+	for i := WKnight + c; i <= WQueen+c; i += 2 {
 		pieces := p.Bitboards[i]
 		for pieces > 0 {
 			from := popLSB(&pieces)
 
 			dests := uint64(0)
 			switch i {
-			case PieceWKnight, PieceBKnight:
+			case WKnight, BKnight:
 				dests |= knightAttacks[from]
-			case PieceWBishop, PieceBBishop:
+			case WBishop, BBishop:
 				dests |= lookupBishopAttacks(from, occupancy)
-			case PieceWRook, PieceBRook:
+			case WRook, BRook:
 				dests |= lookupRookAttacks(from, occupancy)
-			case PieceWQueen, PieceBQueen:
+			case WQueen, BQueen:
 				dests |= lookupQueenAttacks(from, occupancy)
 			}
 
@@ -274,28 +274,28 @@ func genNormalMoves(p Position, l *MoveList) {
 // avoid blocking the attacks of slider pieces.  Otherwise, the king may appear to
 // be able to move into check.
 func genAttacks(bitboards [15]uint64, c Color) (attacks uint64) {
-	for i := PieceWBishop + c; i <= PieceWQueen+c; i += 2 {
+	for i := WBishop + c; i <= WQueen+c; i += 2 {
 		bitboard := bitboards[i]
 		for bitboard > 0 {
 			slider := popLSB(&bitboard)
 
 			switch i {
-			case PieceWBishop, PieceBBishop:
+			case WBishop, BBishop:
 				attacks |= lookupBishopAttacks(slider, bitboards[14])
-			case PieceWRook, PieceBRook:
+			case WRook, BRook:
 				attacks |= lookupRookAttacks(slider, bitboards[14])
-			case PieceWQueen, PieceBQueen:
+			case WQueen, BQueen:
 				attacks |= lookupQueenAttacks(slider, bitboards[14])
 			}
 		}
 	}
 
 	//  Exclude empty squares and squares occupied by allied pieces.
-	attacks |= genPawnAttacks(bitboards[PieceWPawn+c], c)
+	attacks |= genPawnAttacks(bitboards[WPawn+c], c)
 	// Exclude squares occupied by allied pieces.
-	attacks |= genKnightAttacks(bitboards[PieceWKnight+c])
+	attacks |= genKnightAttacks(bitboards[WKnight+c])
 	//  Exclude squares occupied by allied pieces.
-	attacks |= genKingAttacks(bitboards[PieceWKing+c])
+	attacks |= genKingAttacks(bitboards[WKing+c])
 
 	return attacks
 }

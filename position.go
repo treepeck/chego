@@ -62,10 +62,10 @@ func (p *Position) MakeMove(m Move, moved, captured Piece) {
 	case MoveEnPassant:
 		p.placePiece(moved, to)
 		// Remove the captured piece from the board.
-		if moved == PieceWPawn {
-			p.removePiece(PieceBPawn, to>>8)
+		if moved == WPawn {
+			p.removePiece(BPawn, to>>8)
 		} else {
-			p.removePiece(PieceWPawn, to<<8)
+			p.removePiece(WPawn, to<<8)
 		}
 
 	case MoveCastling:
@@ -73,29 +73,29 @@ func (p *Position) MakeMove(m Move, moved, captured Piece) {
 		// Update the rook position.
 		switch to {
 		case G1: // White O-O.
-			p.removePiece(PieceWRook, H1)
-			p.placePiece(PieceWRook, F1)
+			p.removePiece(WRook, H1)
+			p.placePiece(WRook, F1)
 		case G8: // Black O-O.
-			p.removePiece(PieceBRook, H8)
-			p.placePiece(PieceBRook, F8)
+			p.removePiece(BRook, H8)
+			p.placePiece(BRook, F8)
 		case C1: // White O-O-O.
-			p.removePiece(PieceWRook, A1)
-			p.placePiece(PieceWRook, D1)
+			p.removePiece(WRook, A1)
+			p.placePiece(WRook, D1)
 		case C8: // Black O-O-O.
-			p.removePiece(PieceBRook, A8)
-			p.placePiece(PieceBRook, D8)
+			p.removePiece(BRook, A8)
+			p.placePiece(BRook, D8)
 		}
 
 	case MovePromotion:
 		switch m.PromoPiece() {
 		case PromotionKnight:
-			p.placePiece(PieceWKnight+p.ActiveColor, to)
+			p.placePiece(WKnight+p.ActiveColor, to)
 		case PromotionBishop:
-			p.placePiece(PieceWBishop+p.ActiveColor, to)
+			p.placePiece(WBishop+p.ActiveColor, to)
 		case PromotionRook:
-			p.placePiece(PieceWRook+p.ActiveColor, to)
+			p.placePiece(WRook+p.ActiveColor, to)
 		case PromotionQueen:
-			p.placePiece(PieceWQueen+p.ActiveColor, to)
+			p.placePiece(WQueen+p.ActiveColor, to)
 		}
 	}
 
@@ -105,7 +105,7 @@ func (p *Position) MakeMove(m Move, moved, captured Piece) {
 
 	switch moved {
 	// Set en passant target square in case of double pawn push.
-	case PieceWPawn, PieceBPawn:
+	case WPawn, BPawn:
 		if m.To()+16 == m.From() {
 			p.EPTarget = m.To() + 8
 		} else if m.To()-16 == m.From() {
@@ -114,7 +114,7 @@ func (p *Position) MakeMove(m Move, moved, captured Piece) {
 		// Reset the halfmove counter after pawn moves.
 		p.HalfmoveCnt = 0
 	// The king cannot castle with a rook that has already moved.
-	case PieceWRook:
+	case WRook:
 		switch m.From() {
 		case SA1:
 			p.CastlingRights &= ^CastlingWhiteLong
@@ -122,7 +122,7 @@ func (p *Position) MakeMove(m Move, moved, captured Piece) {
 			p.CastlingRights &= ^CastlingWhiteShort
 		}
 	// The king cannot castle with a rook that has already moved.
-	case PieceBRook:
+	case BRook:
 		switch m.From() {
 		case SA8:
 			p.CastlingRights &= ^CastlingBlackLong
@@ -130,10 +130,10 @@ func (p *Position) MakeMove(m Move, moved, captured Piece) {
 			p.CastlingRights &= ^CastlingBlackShort
 		}
 	// Disable white castling rights.
-	case PieceWKing:
+	case WKing:
 		p.CastlingRights &= ^(CastlingWhiteShort | CastlingWhiteLong)
 	// Disable black castling rights.
-	case PieceBKing:
+	case BKing:
 		p.CastlingRights &= ^(CastlingBlackShort | CastlingBlackLong)
 	}
 
@@ -200,7 +200,7 @@ func (p *Position) removePiece(piece Piece, square uint64) {
 // calculateMaterial calculates the piece valies of each side.  Used to determine
 // a draw by insufficient material.
 func (p *Position) calculateMaterial() (material int) {
-	for piece := range PieceWKing {
+	for piece := range WKing {
 		material += CountBits(p.Bitboards[piece]) * pieceWeights[piece]
 	}
 	return material
@@ -209,7 +209,7 @@ func (p *Position) calculateMaterial() (material int) {
 // zobristKey hashes the position into a 64-bit unsigned integer.   This allows
 // positions to be used as lookup keys and stored or compared efficiently.
 func (p Position) zobristKey() (key uint64) {
-	for i := PieceWPawn; i <= PieceBKing; i++ {
+	for i := WPawn; i <= BKing; i++ {
 		for p.Bitboards[i] > 0 {
 			key ^= pieceKeys[i][popLSB(&p.Bitboards[i])]
 		}

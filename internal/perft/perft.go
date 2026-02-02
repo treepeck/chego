@@ -100,7 +100,7 @@ func perftVerbose(p chego.Position, depth int, r *result, isRoot bool) int {
 
 		cnt = perftVerbose(p, depth-1, r, false)
 		if isRoot {
-			log.Printf("%s %d", chego.Move2UCI(l.Moves[i]), cnt)
+			log.Printf("%s %d", move2UCI(l.Moves[i]), cnt)
 		}
 		nodes += cnt
 
@@ -117,6 +117,32 @@ func perftVerbose(p chego.Position, depth int, r *result, isRoot bool) int {
 	}
 
 	return nodes
+}
+
+// move2UCI converts the move into a long algebraic notation string.
+//
+// Examples: e2e4, e7e5, e1g1 (white short castling), e7e8q (for promotion).
+func move2UCI(m chego.Move) string {
+	var b strings.Builder
+	b.Grow(4)
+
+	b.WriteString(chego.Square2String[m.From()])
+	b.WriteString(chego.Square2String[m.To()])
+
+	if m.Type() == chego.MovePromotion {
+		switch m.PromoPiece() {
+		case chego.PromotionKnight:
+			b.WriteByte('n')
+		case chego.PromotionBishop:
+			b.WriteByte('b')
+		case chego.PromotionRook:
+			b.WriteByte('r')
+		case chego.PromotionQueen:
+			b.WriteByte('q')
+		}
+	}
+
+	return b.String()
 }
 
 // main runs the perft and measures it's execution time.
@@ -195,7 +221,7 @@ func position(p chego.Position) string {
 
 			symbol := byte('.')
 
-			for i := chego.PieceWPawn; i <= chego.PieceBKing; i++ {
+			for i := chego.WPawn; i <= chego.BKing; i++ {
 				if square&p.Bitboards[i] != 0 {
 					symbol = chego.PieceSymbols[i]
 					break
