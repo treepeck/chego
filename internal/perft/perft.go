@@ -8,7 +8,7 @@ package main
 
 import (
 	"flag"
-	"log"
+	"fmt"
 	"os"
 	"runtime/pprof"
 	"strings"
@@ -99,7 +99,7 @@ func perftVerbose(p chego.Position, depth int, r *result, isRoot bool) int {
 
 		cnt = perftVerbose(p, depth-1, r, false)
 		if isRoot {
-			log.Printf("%s %d", move2UCI(l.Moves[i]), cnt)
+			fmt.Printf("%s %d\n", move2UCI(l.Moves[i]), cnt)
 		}
 		nodes += cnt
 
@@ -163,8 +163,8 @@ func main() {
 		elapsed := time.Since(start)
 
 		if *verbose {
-			log.Printf("\nRoot position:\n%s\n\n\t%s\n\n", position(p), fen)
-			log.Printf("\t%d\t%d\t\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t",
+			fmt.Printf("\nRoot position:\n%s\n\n\t%s\n\n", position(p), fen)
+			fmt.Printf("\t%d\t%d\t\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t",
 				*depth,
 				r.nodes,
 				r.captures,
@@ -175,18 +175,18 @@ func main() {
 				r.doubleChecks,
 				r.checkmates,
 			)
-			log.Printf("Elapsed time: %d ns", elapsed.Nanoseconds())
+			fmt.Printf("Elapsed time: %d ns\n", elapsed.Nanoseconds())
 		} else {
 
-			log.Printf("Nodes reached: %d", r.nodes)
-			log.Printf("Elapsed time: %d ns", elapsed.Nanoseconds())
+			fmt.Printf("Nodes reached: %d\n", r.nodes)
+			fmt.Printf("Elapsed time: %d ns\n", elapsed.Nanoseconds())
 		}
 	}()
 
 	if *cpuprofile != "" {
 		f, err := os.Create(*cpuprofile)
 		if err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 		pprof.StartCPUProfile(f)
 		defer pprof.StopCPUProfile()
@@ -194,7 +194,7 @@ func main() {
 	if *memprofile != "" {
 		f, err := os.Create(*memprofile)
 		if err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 		pprof.WriteHeapProfile(f)
 		defer f.Close()
