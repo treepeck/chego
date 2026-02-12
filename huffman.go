@@ -1,5 +1,11 @@
 package chego
 
+// Entry of the [HuffmanCodes] array.
+type HuffmanEntry struct {
+	Code uint
+	Size int
+}
+
 // Huffman codes for legal move list indices.
 // To calculate them, 10164006 games with 685863447 moves in total were
 // analyzed.  See README.md for more details.
@@ -14,7 +20,7 @@ package chego
 // The frequencies were generated using data from the Lichess database exports
 // (https://database.lichess.org), which are released under the Creative
 // Commons CC0 license.
-var huffmanCodes = [218]huffmanEntry{
+var HuffmanCodes = [218]HuffmanEntry{
 	{0b1011, 4},                            // index 0 | played 35516075 times
 	{0b00011, 5},                           // index 1 | played 28863637 times
 	{0b1100, 4},                            // index 2 | played 33697520 times

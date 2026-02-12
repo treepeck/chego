@@ -2,12 +2,6 @@
 
 package chego
 
-// Entry of the huffmanCodes array.
-type huffmanEntry struct {
-	Code uint
-	Size int
-}
-
 // Piece is an allias type to avoid bothersome conversion between int and Piece.
 type Piece = int
 
