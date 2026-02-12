@@ -1,5 +1,5 @@
 cpuprof:
-	go build -o perft perft.go 
+	go build -o perft perft.go
 	./perft -depth 6 -cpuprofile="cpu.prof"
 	go tool pprof perft cpu.prof
 

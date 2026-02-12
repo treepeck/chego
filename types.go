@@ -8,18 +8,6 @@ type huffmanEntry struct {
 	Size int
 }
 
-// Node represents a binary tree node.  Used to build a Huffman coding tree.
-type Node struct {
-	Left  *Node
-	Right *Node
-	Index int // Legal move index.
-	Freq  int // Number of played times.
-}
-
-func NewNode(left, right *Node, ind, freq int) *Node {
-	return &Node{Left: left, Right: right, Index: ind, Freq: freq}
-}
-
 // Piece is an allias type to avoid bothersome conversion between int and Piece.
 type Piece = int
 

@@ -18,73 +18,22 @@ import (
 )
 
 var (
-	// sanEx expression is needed to extract clean SANs from the dirty
-	// PGN movetext.
+	// PGN movetext may include move numbers and other tokens that are
+	// not useful for Huffman encoding. sanEx is used to extract only
+	// Standard Algebraic Notation tokens from the movetext.
 	sanEx = regexp.MustCompile(`([NBRQK]?[a-h]?[1-8]?x?[a-h][1-8](=[NBRQ])?[+#]?)|(O-O(-O)?[+#]?)`)
-	// Annotations sometimes occur in movetext and must be trimmed.
+	// PGN movetext may include annotations that need to be detected and removed.
+	// sanEx cannot remove annotations because they may be attached directly to
+	// the SAN move (e.g., e2??).
 	annotationEx = regexp.MustCompile(`[!?]{1,2}`)
 )
 
-// workerPool manages the execution of a set of jobs by concurrent workers.
-type workerPool struct {
-	sync.Mutex
-	wg      sync.WaitGroup
-	results [218]int
-	jobs    chan string
-}
-
-func newWorkerPool() *workerPool {
-	return &workerPool{
-		wg:   sync.WaitGroup{},
-		jobs: make(chan string),
-	}
-}
-
-// processGame processes a single movetext at a time by sequentially parsing and
-// applying the specified moves and counting which index of strictly legal move
-// list was actually played.
-func (p *workerPool) processGame() {
-	for {
-		movetext, ok := <-p.jobs
-		if !ok {
-			p.wg.Done()
-			return
-		}
-
-		pos := chego.ParseFEN(chego.InitialPos)
-		ml := chego.MoveList{}
-		chego.GenLegalMoves(pos, &ml)
-
-		for token := range strings.SplitSeq(movetext, " ") {
-			prev := pos
-			cml := ml
-			hasMatched := false
-
-			for i := range cml.LastMoveIndex {
-				pos = prev
-				ml = cml
-
-				if chego.Move2SAN(ml.Moves[i], &pos, &ml) == token {
-					p.Lock()
-					p.results[i]++
-					hasMatched = true
-					p.Unlock()
-					break
-				}
-			}
-			if !hasMatched {
-				fmt.Printf("no match: %s in movetext %s\n", token, movetext)
-			}
-		}
-	}
-}
-
-// clean reads from the specified reader line by line and extracts valid SAN
-// move encodings into the writer.  Each output line will contain a sequence of
-// SAN moves, separated by a single whitespace. This allows each game to be
-// analyzed quickly and independently.
+// clean reads from the specified reader line by line and writes valid SAN tokens
+// into the resulting file.  r reader must read a valid PGN database file.
+// Each output line will contain a sequence of SAN tokens, separated by a single
+// whitespace.  All other PGN data will be trimmed.
 //
-// Note: SAN moves appearing inside comments are also recognized as valid moves.
+// Note: SAN tokens appearing inside comments are also recognized as valid moves.
 // Ensure that the input PGN file doesn't contain SAN moves within comments.
 func clean(r *bufio.Reader, output *os.File) {
 	for {
@@ -131,16 +80,15 @@ func clean(r *bufio.Reader, output *os.File) {
 	}
 }
 
-// generate generates Huffman codes for indices of legal moves in a MoveList of
-// strictly legal moves.  Based on data from the provided reader.  The input
-// data must be clean and formed by the [clean] function.
+// generate writes the array of generated Huffman codes to the output file.  r
+// reader must read a file produced by the [clean] function.
 func generate(r *bufio.Reader, output *os.File, workers int) {
 	numGames := 0
-	p := newWorkerPool()
+	e := newEncoder()
 
 	for range workers {
-		go p.processGame()
-		p.wg.Add(1)
+		go e.processGame()
+		e.wg.Add(1)
 	}
 
 	go func() {
@@ -158,47 +106,133 @@ func generate(r *bufio.Reader, output *os.File, workers int) {
 
 			// ReadString returns the chunk with the ' \n' suffix, which needs
 			// to be trimmed.
-			p.jobs <- chunk[:len(chunk)-2]
+			e.jobs <- chunk[:len(chunk)-2]
 			numGames++
 
 			if err == io.EOF {
 				break
 			}
 		}
-		close(p.jobs)
+		close(e.jobs)
 	}()
 
-	p.wg.Wait()
+	e.wg.Wait()
 
-	codes := huffmanTree(&p.results)
+	codes := e.encode()
 
 	numMoves := 0
 	for i := range 218 {
 		fmt.Fprintf(output, "{0b%s, %d}\t\t\t// index %d | played %d times\n",
-			codes[i], len(codes[i]), i, p.results[i])
-		numMoves += p.results[i]
+			codes[i], len(codes[i]), i, e.results[i])
+		numMoves += e.results[i]
 	}
 	fmt.Fprintf(output, "%d games analyzed\n", numGames)
 	fmt.Fprintf(output, "%d moves in tree\n", numMoves)
 }
 
-// huffmanTree sorts the input array and builds the Huffman coding tree.
-func huffmanTree(results *[218]int) (codes [218]string) {
-	sorted := make([]*chego.Node, 0)
-	for i := range results {
-		// Manually assign 1 frequency to moves that haven't been played to
-		// build a valid Huffman tree.
-		if results[i] == 0 {
-			results[i]++
+// node represents the Huffman tree node.
+type node struct {
+	left  *node
+	right *node
+	index int // Index of the legal move (in move list).
+	freq  int // Number of played times.
+}
+
+func newNode(left, right *node, ind, freq int) *node {
+	return &node{left: left, right: right, index: ind, freq: freq}
+}
+
+// encoder manages concurrent Huffman code generation.  It also protects the
+// resulting Huffman code array from concurrent writes using a mutex.
+type encoder struct {
+	sync.Mutex
+	wg      sync.WaitGroup
+	results [218]int
+	jobs    chan string
+}
+
+func newEncoder() *encoder {
+	return &encoder{
+		wg:   sync.WaitGroup{},
+		jobs: make(chan string),
+	}
+}
+
+// processGame processes a single movetext line by sequentially parsing
+// and applying the specified moves, tracking which index in the
+// strictly legal move list was actually played.
+func (e *encoder) processGame() {
+	for {
+		movetext, ok := <-e.jobs
+		if !ok {
+			e.wg.Done()
+			return
 		}
 
-		n := chego.NewNode(nil, nil, i, results[i])
+		pos := chego.ParseFEN(chego.InitialPos)
+		ml := chego.MoveList{}
+		chego.GenLegalMoves(pos, &ml)
+
+		for token := range strings.SplitSeq(movetext, " ") {
+			prev := pos
+			cml := ml
+			hasMatched := false
+
+			for i := range cml.LastMoveIndex {
+				pos = prev
+				ml = cml
+
+				if chego.Move2SAN(ml.Moves[i], &pos, &ml) == token {
+					e.Lock()
+					e.results[i]++
+					hasMatched = true
+					e.Unlock()
+					break
+				}
+			}
+			if !hasMatched {
+				fmt.Printf("no match: %s in movetext %s\n", token, movetext)
+			}
+		}
+	}
+}
+
+// traversePreOrder traverses the subtree in pre-order and builds the array of
+// resulting encoded strings.
+func (n *node) traversePreOrder(codes *[218]string, current string) {
+	if n == nil {
+		return
+	}
+
+	if n.left == nil && n.right == nil {
+		(*codes)[n.index] = current
+		return
+	}
+
+	n.left.traversePreOrder(codes, current+"1")
+	n.right.traversePreOrder(codes, current+"0")
+}
+
+// encode generates an array of encoded strings. Each string represents
+// the legal move at the corresponding index.
+func (e *encoder) encode() [218]string {
+	// TODO: Slowest sorting code ever.  I was lazy to apply quicksort here.
+	// It's bad.
+	sorted := make([]*node, 0)
+	for i := range e.results {
+		// Manually assign 1 frequency to moves that haven't been played to
+		// build a valid Huffman tree.
+		if e.results[i] == 0 {
+			e.results[i]++
+		}
+
+		n := newNode(nil, nil, i, e.results[i])
 
 		wasAppended := false
 		for j := range sorted {
-			if sorted[j].Freq < results[i] {
+			if sorted[j].freq < e.results[i] {
 				sorted = append(sorted[:j], append(
-					[]*chego.Node{n},
+					[]*node{n},
 					sorted[j:]...,
 				)...)
 				wasAppended = true
@@ -220,13 +254,13 @@ func huffmanTree(results *[218]int) (codes [218]string) {
 		right := sorted[len(sorted)-1]
 		sorted = sorted[:len(sorted)-1]
 
-		n := chego.NewNode(left, right, -1, left.Freq+right.Freq)
+		n := newNode(left, right, -1, left.freq+right.freq)
 
 		wasAppended := false
 		for i := range sorted {
-			if sorted[i].Freq < n.Freq {
+			if sorted[i].freq < n.freq {
 				sorted = append(sorted[:i], append(
-					[]*chego.Node{n},
+					[]*node{n},
 					sorted[i:]...,
 				)...)
 				wasAppended = true
@@ -239,7 +273,8 @@ func huffmanTree(results *[218]int) (codes [218]string) {
 	}
 
 	// Form codes.
-	chego.TraversePreOrder(sorted[0], &codes, "")
+	var codes [218]string
+	sorted[0].traversePreOrder(&codes, "")
 	return codes
 }
 

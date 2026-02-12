@@ -17,8 +17,7 @@ import (
 	"github.com/treepeck/chego"
 )
 
-// result information will be printed is the perft is executed with the
-// verbose flag.
+// result information is printed to the console when the verbose flag is used.
 type result struct {
 	nodes        int
 	captures     int
