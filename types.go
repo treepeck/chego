@@ -4,7 +4,7 @@ package chego
 
 // Entry of the huffmanCodes array.
 type huffmanEntry struct {
-	Code int
+	Code uint
 	Size int
 }
 

@@ -43,23 +43,37 @@ func NewBitWriter() *BitWriter { return &BitWriter{remainingBits: intSize} }
 // is stored in an internal integer field. When the field overflows, its contents
 // are flushed to the internal bytes.Buffer.
 func (bw *BitWriter) Write(data uint, size int) {
-	// Set all unused bits in data to 0.
-	data &= 1<<size - 1
-
 	bw.remainingBits -= size
 	if bw.remainingBits >= 0 {
 		bw.temp |= data << bw.remainingBits
 	} else {
 		bw.temp |= data >> -bw.remainingBits
 		// Split integer into the byte sequence.
-		for i := range intSize / 8 {
+		for i := (intSize / 8) - 1; i >= 0; i-- {
 			chunk := byte(bw.temp >> (i * 8) & 0xFF)
 			// Don't handle error since WriteByte always returns nil.
 			bw.buff.WriteByte(chunk)
 		}
 		bw.remainingBits += intSize
+		bw.temp = data << bw.remainingBits
 	}
-	bw.temp = data << bw.remainingBits
+}
+
+// Bytes returns the accumulated bytes.
+func (bw *BitWriter) Bytes() []byte {
+	// Ceiling division using plain integer arithmetics.
+	// ceil(X / N) = (X + N - 1) / N
+	remainingBytes := (intSize + 7 - bw.remainingBits) / 8
+	// Write remaining bytes to the buffer.
+	for i := remainingBytes - 1; i >= 0; i-- {
+		chunk := byte(bw.temp >> (intSize - 8 - i*8) & 0xFF)
+		// Don't handle error since WriteByte always returns nil.
+		bw.buff.WriteByte(chunk)
+	}
+	// Reset remaining bits.
+	bw.remainingBits = 0
+
+	return bw.buff.Bytes()
 }
 
 // CountBits returns the number of bits set within the bitboard.

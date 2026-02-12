@@ -17,8 +17,24 @@ func TestBitWriter(t *testing.T) {
 
 	got := bw.buff.Len()*8 + (intSize - bw.remainingBits)
 	if got != expected {
-		t.Logf("Expected %d bits. Buffer has %d bits\n", expected, got)
+		t.Fatalf("Expected %d bits. Buffer has %d bits\n", expected, got)
 	}
+
+	expectedBuff := []byte{
+		0b11011100, 0b10111011, 0b11000100, 0b11010101, 0b11100110, 0b11110111,
+		0b11000010, 0b00110010, 0b10011101, 0b00101011, 0b01101011, 0b11100011,
+		0b00111010, 0b11011111, 0b00111011, 0b11101111, 0b11000001, 0b00001100,
+		0b01010001, 0b11001001, 0b00101100, 0b11010011, 0b11010001, 0b01001101,
+		0b01010101, 0b11011001, 0b01101101, 0b11010111, 0b11100001, 0b10001110,
+		0b01011001, 0b11101001, 0b10101110, 0b11011011, 0b11110001, 0b11001111,
+		0b01011101, 0b11111001, 0b11101111, 0b11011111, 0b11000000,
+	}
+	for i, b := range bw.Bytes() {
+		if expectedBuff[i] != b {
+			t.Fatalf("Expected %b, got %b", expectedBuff[i], b)
+		}
+	}
+
 }
 
 func TestBitScan(t *testing.T) {
