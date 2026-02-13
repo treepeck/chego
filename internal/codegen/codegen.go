@@ -84,11 +84,11 @@ func clean(r *bufio.Reader, output *os.File) {
 // reader must read a file produced by the [clean] function.
 func generate(r *bufio.Reader, output *os.File, workers int) {
 	numGames := 0
-	e := newEncoder()
+	g := newGenerator()
 
 	for range workers {
-		go e.processGame()
-		e.wg.Add(1)
+		go g.processGame()
+		g.wg.Add(1)
 	}
 
 	go func() {
@@ -106,25 +106,25 @@ func generate(r *bufio.Reader, output *os.File, workers int) {
 
 			// ReadString returns the chunk with the ' \n' suffix, which needs
 			// to be trimmed.
-			e.jobs <- chunk[:len(chunk)-2]
+			g.jobs <- chunk[:len(chunk)-2]
 			numGames++
 
 			if err == io.EOF {
 				break
 			}
 		}
-		close(e.jobs)
+		close(g.jobs)
 	}()
 
-	e.wg.Wait()
+	g.wg.Wait()
 
-	codes := e.encode()
+	codes := g.encode()
 
 	numMoves := 0
 	for i := range 218 {
 		fmt.Fprintf(output, "{0b%s, %d}\t\t\t// index %d | played %d times\n",
-			codes[i], len(codes[i]), i, e.results[i])
-		numMoves += e.results[i]
+			codes[i], len(codes[i]), i, g.results[i])
+		numMoves += g.results[i]
 	}
 	fmt.Fprintf(output, "%d games analyzed\n", numGames)
 	fmt.Fprintf(output, "%d moves in tree\n", numMoves)
@@ -142,17 +142,17 @@ func newNode(left, right *node, ind, freq int) *node {
 	return &node{left: left, right: right, index: ind, freq: freq}
 }
 
-// encoder manages concurrent Huffman code generation.  It also protects the
+// generator manages concurrent Huffman code generation.  It also protects the
 // resulting Huffman code array from concurrent writes using a mutex.
-type encoder struct {
+type generator struct {
 	sync.Mutex
 	wg      sync.WaitGroup
 	results [218]int
 	jobs    chan string
 }
 
-func newEncoder() *encoder {
-	return &encoder{
+func newGenerator() *generator {
+	return &generator{
 		wg:   sync.WaitGroup{},
 		jobs: make(chan string),
 	}
@@ -161,11 +161,11 @@ func newEncoder() *encoder {
 // processGame processes a single movetext line by sequentially parsing
 // and applying the specified moves, tracking which index in the
 // strictly legal move list was actually played.
-func (e *encoder) processGame() {
+func (g *generator) processGame() {
 	for {
-		movetext, ok := <-e.jobs
+		movetext, ok := <-g.jobs
 		if !ok {
-			e.wg.Done()
+			g.wg.Done()
 			return
 		}
 
@@ -183,10 +183,10 @@ func (e *encoder) processGame() {
 				ml = cml
 
 				if chego.Move2SAN(ml.Moves[i], &pos, &ml) == token {
-					e.Lock()
-					e.results[i]++
+					g.Lock()
+					g.results[i]++
 					hasMatched = true
-					e.Unlock()
+					g.Unlock()
 					break
 				}
 			}
@@ -215,22 +215,22 @@ func (n *node) traversePreOrder(codes *[218]string, current string) {
 
 // encode generates an array of encoded strings. Each string represents
 // the legal move at the corresponding index.
-func (e *encoder) encode() [218]string {
+func (g *generator) encode() [218]string {
 	// TODO: Slowest sorting code ever.  I was lazy to apply quicksort here.
 	// It's bad.
 	sorted := make([]*node, 0)
-	for i := range e.results {
+	for i := range g.results {
 		// Manually assign 1 frequency to moves that haven't been played to
 		// build a valid Huffman tree.
-		if e.results[i] == 0 {
-			e.results[i]++
+		if g.results[i] == 0 {
+			g.results[i]++
 		}
 
-		n := newNode(nil, nil, i, e.results[i])
+		n := newNode(nil, nil, i, g.results[i])
 
 		wasAppended := false
 		for j := range sorted {
-			if sorted[j].freq < e.results[i] {
+			if sorted[j].freq < g.results[i] {
 				sorted = append(sorted[:j], append(
 					[]*node{n},
 					sorted[j:]...,
@@ -280,11 +280,8 @@ func (e *encoder) encode() [218]string {
 
 func main() {
 	input := flag.String("input", "clean.txt", "Path to the input file")
-
 	workers := flag.Int("workers", 1, "Number of concurrent routines which will perform the task")
-
 	task := flag.String("task", "gen", "clean task will prepare the PGN file for code generation, generate task will generate the Huffman codes based of frequency of played moves")
-
 	output := flag.String("output", "output.pgn", "Path to the output file")
 
 	flag.Parse()
