@@ -1,14 +1,109 @@
+// TODO: documentation.
+
 package chego
 
-// Entry of the [HuffmanCodes] array.
-type HuffmanEntry struct {
-	Code uint
-	Size int
+// HuffmanEncoding encodes the list of legal moves by their indices in the [MoveList].
+func HuffmanEncoding(indices []int) []byte {
+	w := bitWriter{remainingBits: intSize}
+	for _, ind := range indices {
+		e := huffmanCodes[ind]
+		w.write(e.code, e.size)
+	}
+	return w.content()
+}
+
+// DecodedMove represents the result of Huffman decoding.
+type DecodedMove struct {
+	Move Move
+	San  string
+}
+
+// HuffmanDecoding decodes the given legal moves.
+func HuffmanDecoding(encoded []byte, length int) []DecodedMove {
+	decoded := make([]DecodedMove, 0, length)
+
+	r := bitReader{buff: encoded}
+
+	p := ParseFEN(InitialPos)
+	var l MoveList
+	GenLegalMoves(p, &l)
+
+	for range length {
+		// No valid Huffman code is a prefix of another Huffman code.
+		// Therefore, to decode the move, traverse the tree until reaching a
+		// leaf node (both left and right children are nil).
+		n := trie
+		for n.left != nil && n.right != nil {
+			next := r.read(1)
+			if next == 0 {
+				n = n.left
+			} else {
+				n = n.right
+			}
+		}
+		// Collect results of decoding.
+		m := l.Moves[n.index]
+		decoded = append(decoded, DecodedMove{
+			Move: m,
+			San:  Move2SAN(m, &p, &l),
+		})
+	}
+
+	return decoded
+}
+
+// node of the Huffman trie.
+type node struct {
+	// There are only two symbols in the alphabet - 0 and 1, therefore two child nodes.
+	left, right *node
+	// Index of the [huffmanEntry] in [huffmanCodes] array.
+	index int
+}
+
+// makeTrie fills the trie with nodes which represents the [huffmanEntry].
+func makeTrie() *node {
+	root := &node{index: -1}
+
+	for i := range 218 {
+		e := huffmanCodes[i]
+
+		curr := root
+
+		for j := e.size - 1; j >= 0; j-- {
+			// Get the most significant bit of the code since [bitReader]
+			// read bits in big endian order.
+			bit := e.code >> j & 1
+
+			if bit == 0 {
+				if curr.left == nil {
+					curr.left = &node{index: -1}
+				}
+				curr = curr.left
+			} else {
+				if curr.right == nil {
+					curr.right = &node{index: -1}
+				}
+				curr = curr.right
+			}
+		}
+
+		curr.index = i
+	}
+	return root
+}
+
+// trie (aka prefix tree) is used to speed up Huffman decoding.
+var trie = makeTrie()
+
+// Entry of the [huffmanCodes] array.
+type huffmanEntry struct {
+	code uint
+	size int
 }
 
 // Huffman codes for legal move list indices.
 // To calculate them, 10164006 games with 685863447 moves in total were
-// analyzed.  See README.md for more details.
+// analyzed.  See codegen.go for more details.
 //
 // The maximum number of legal moves in a chess position appears to be 218,
 // so the array contains 218 elements. The latter half of the indices didn't
@@ -20,7 +115,7 @@ type HuffmanEntry struct {
 // The frequencies were generated using data from the Lichess database exports
 // (https://database.lichess.org), which are released under the Creative
 // Commons CC0 license.
-var HuffmanCodes = [218]HuffmanEntry{
+var huffmanCodes = [218]huffmanEntry{
 	{0b1011, 4},                            // index 0 | played 35516075 times
 	{0b00011, 5},                           // index 1 | played 28863637 times
 	{0b1100, 4},                            // index 2 | played 33697520 times

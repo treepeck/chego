@@ -63,7 +63,7 @@ func (bw *bitWriter) content() []byte {
 	// ceil(X / N) = (X + N - 1) / N
 	remainingBytes := (intSize + 7 - bw.remainingBits) / 8
 	// Write remaining bytes to the buffer.
-	for i := remainingBytes - 1; i >= 0; i-- {
+	for i := range remainingBytes {
 		chunk := byte(bw.temp >> (intSize - 8 - i*8))
 		// Don't handle error since WriteByte always returns nil.
 		bw.buff.WriteByte(chunk)
@@ -80,6 +80,7 @@ type bitReader struct {
 	remainingBits int
 }
 
+// fillTemp fills the internal temporary buffer of the reader.
 func (br *bitReader) fillTemp() {
 	br.temp = 0
 	if len(br.buff) >= intSize/8 {
@@ -91,19 +92,20 @@ func (br *bitReader) fillTemp() {
 		}
 		br.remainingBits = intSize
 	} else {
-		for i, chunk := range br.buff {
-			br.temp |= uint(chunk) << (i * 8)
-		}
 		br.remainingBits = len(br.buff) * 8
+		for i, chunk := range br.buff {
+			br.temp |= uint(chunk) << (br.remainingBits - 8 - i*8)
+		}
 	}
 }
 
+// read reads the specified amount of bits.
 func (br *bitReader) read(size int) uint {
 	if br.remainingBits >= size {
 		br.remainingBits -= size
 		return br.temp >> br.remainingBits & (1<<size - 1)
 	}
-	res := br.temp & (1<<br.remainingBits - 1)
+	res := br.temp >> br.remainingBits & (1<<br.remainingBits - 1)
 	need := size - br.remainingBits
 	br.fillTemp()
 	return res<<need | br.read(need)
