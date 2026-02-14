@@ -9,7 +9,7 @@ func TestHuffmanEncoding(t *testing.T) {
 		0b11101110, 0b00001010, 0b01100000,
 	}
 
-	got := HuffmanEncoding([]int{9, 9, 22, 17})
+	got := HuffmanEncoding([]byte{9, 9, 22, 17})
 
 	for i, b := range expected {
 		if got[i] != b {

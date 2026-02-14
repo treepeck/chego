@@ -1,9 +1,9 @@
-// TODO: documentation.
+// huffman.go implements the move compression using Huffman coding.
 
 package chego
 
 // HuffmanEncoding encodes the list of legal moves by their indices in the [MoveList].
-func HuffmanEncoding(indices []int) []byte {
+func HuffmanEncoding(indices []byte) []byte {
 	w := bitWriter{remainingBits: intSize}
 	for _, ind := range indices {
 		e := huffmanCodes[ind]
@@ -30,8 +30,8 @@ func HuffmanDecoding(encoded []byte, length int) []DecodedMove {
 
 	for range length {
 		// No valid Huffman code is a prefix of another Huffman code.
-		// Therefore, to decode the move, traverse the tree until reaching a
-		// leaf node (both left and right children are nil).
+		// Therefore, to decode the move, traverse the trie until reaching a
+		// leaf node.
 		n := trie
 		for n.left != nil && n.right != nil {
 			next := r.read(1)
