@@ -121,7 +121,7 @@ func TestIsInsufficientMaterial(t *testing.T) {
 
 	game := NewGame()
 	for _, tc := range testcases {
-		game.position.Bitboards = ParseBitboards(tc.fen)
+		game.Position.Bitboards = ParseBitboards(tc.fen)
 
 		got := game.IsInsufficientMaterial()
 		if got != tc.expected {
@@ -142,8 +142,8 @@ func TestIsCheckmate(t *testing.T) {
 
 	game := NewGame()
 	for _, tc := range testcases {
-		game.position = ParseFEN(tc.fenString)
-		GenLegalMoves(game.position, &game.LegalMoves)
+		game.Position = ParseFEN(tc.fenString)
+		GenLegalMoves(game.Position, &game.LegalMoves)
 
 		got := game.IsCheckmate()
 		if got != tc.expected {
@@ -157,7 +157,7 @@ func BenchmarkPushMove(b *testing.B) {
 	pos := ParseFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
 
 	for b.Loop() {
-		game.position = pos
+		game.Position = pos
 		game.PushMove(NewMove(SE4, SE2, MoveNormal))
 	}
 }
@@ -186,9 +186,9 @@ func BenchmarkIsThreefoldRepetition(b *testing.B) {
 
 	for i, move := range moveStack {
 		game.PushMove(move)
-		GenLegalMoves(game.position, &game.LegalMoves)
+		GenLegalMoves(game.Position, &game.LegalMoves)
 		if i < len(moveStack)-1 {
-			game.repetitions[game.position.zobristKey()]++
+			game.repetitions[game.Position.zobristKey()]++
 		}
 	}
 

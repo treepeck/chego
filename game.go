@@ -10,9 +10,9 @@ package chego
 // concurrently (prevent race conditions).
 type Game struct {
 	LegalMoves MoveList
-	position   Position
+	Position   Position
 	// Repetition keys are stored as a map of Zobrist keys to the number of
-	// times each position has occurred.
+	// times each Position has occurred.
 	repetitions map[uint64]int
 	Result      Result
 	Termination Termination
@@ -23,16 +23,16 @@ type Game struct {
 
 func NewGame() *Game {
 	g := &Game{
-		position:    ParseFEN(InitialPos),
+		Position:    ParseFEN(InitialPos),
 		repetitions: make(map[uint64]int, 1),
 		Result:      Unknown,
 		Termination: Unterminated,
 	}
 
-	GenLegalMoves(g.position, &g.LegalMoves)
+	GenLegalMoves(g.Position, &g.LegalMoves)
 
 	// Initialize Zobrist key for the initial position.
-	g.repetitions[g.position.zobristKey()] = 1
+	g.repetitions[g.Position.zobristKey()] = 1
 
 	return g
 }
@@ -41,14 +41,14 @@ func NewGame() *Game {
 // its Standard Algebraic Notation.  It's a caller's responsibility to ensure
 // that the specified move is legal.  Not safe for concurrent use.
 func (g *Game) PushMove(m Move) string {
-	moved := g.position.GetPieceFromSquare(1 << m.From())
-	captured := g.position.GetPieceFromSquare(1 << m.To())
+	moved := g.Position.GetPieceFromSquare(1 << m.From())
+	captured := g.Position.GetPieceFromSquare(1 << m.To())
 	isCapture := captured != PieceNone
 
 	// Encode the move in the Standard Algebraic Notation.  Note that the check
 	// and checkmate sybmols must be added later.
 	// Move2SAN also perform the move and generates legal moves for next turn.
-	san := Move2SAN(m, &g.position, &g.LegalMoves)
+	san := Move2SAN(m, &g.Position, &g.LegalMoves)
 
 	// Clear the repetitions map after applying the irreversable move.
 	// See https://www.chessprogramming.org/Irreversible_Moves
@@ -59,7 +59,7 @@ func (g *Game) PushMove(m Move) string {
 
 	// Increment the repitition key entry.
 	// TODO: optimize by updating the hash incrementally.
-	g.repetitions[g.position.zobristKey()]++
+	g.repetitions[g.Position.zobristKey()]++
 
 	return san
 }
@@ -91,23 +91,23 @@ func (g *Game) IsThreefoldRepetition() bool {
 func (g *Game) IsInsufficientMaterial() bool {
 	// Bitmask for all dark squares.
 	dark := uint64(0xAA55AA55AA55AA55)
-	material := g.position.calculateMaterial()
+	material := g.Position.calculateMaterial()
 
-	if material == 0 || (material == 3 && g.position.Bitboards[WPawn] == 0 &&
-		g.position.Bitboards[BPawn] == 0) {
+	if material == 0 || (material == 3 && g.Position.Bitboards[WPawn] == 0 &&
+		g.Position.Bitboards[BPawn] == 0) {
 		return true
 	}
 
 	if material == 6 {
-		wb := g.position.Bitboards[WBishop]
-		bb := g.position.Bitboards[BBishop]
+		wb := g.Position.Bitboards[WBishop]
+		bb := g.Position.Bitboards[BBishop]
 
 		// If there are two bishops both standing on the same colored squares.
 		return (wb != 0 && bb != 0 && ((wb&dark > 0 && bb&dark > 0) ||
 			(wb&dark == 0 && bb&dark == 0))) ||
 			// Or if there are two knights.
-			(g.position.Bitboards[WKnight] != 0 &&
-				g.position.Bitboards[BKnight] != 0)
+			(g.Position.Bitboards[WKnight] != 0 &&
+				g.Position.Bitboards[BKnight] != 0)
 	}
 	return false
 }
@@ -119,7 +119,7 @@ func (g *Game) IsInsufficientMaterial() bool {
 // NOTE: If there are no legal moves, but the king is not in check, the position
 // is a stalemate.
 func (g *Game) IsCheckmate() bool {
-	return GenChecksCounter(g.position.Bitboards, 1^g.position.ActiveColor) > 0 &&
+	return GenChecksCounter(g.Position.Bitboards, 1^g.Position.ActiveColor) > 0 &&
 		g.LegalMoves.LastMoveIndex == 0
 }
 
