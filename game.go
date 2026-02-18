@@ -45,6 +45,13 @@ func (g *Game) PushMove(m Move) string {
 	captured := g.Position.GetPieceFromSquare(1 << m.To())
 	isCapture := captured != PieceNone
 
+	// Add time bonus to player's clock.
+	if g.Position.ActiveColor == ColorWhite {
+		g.WhiteTime += g.TimeBonus
+	} else {
+		g.BlackTime += g.TimeBonus
+	}
+
 	// Encode the move in the Standard Algebraic Notation.  Note that the check
 	// and checkmate sybmols must be added later.
 	// Move2SAN also perform the move and generates legal moves for next turn.
