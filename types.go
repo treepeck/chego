@@ -88,9 +88,13 @@ type Termination int
 const (
 	Unterminated Termination = iota
 	Abandoned
-	Adjudication
-	Normal
-	RulesInfraction
+	Checkmate
+	Stalemate
+	InsufficientMaterial
+	FiftyMoves
+	ThreefoldRepetition
+	Resignation
+	Agreement
 	TimeForfeit
 )
 
