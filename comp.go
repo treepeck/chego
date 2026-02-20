@@ -1,4 +1,4 @@
-// huffman.go implements the move compression using Huffman coding.
+// comp.go implements the move and clock compression.
 
 package chego
 
@@ -52,6 +52,25 @@ func HuffmanDecoding(encoded []byte, length int) []DecodedMove {
 	return decoded
 }
 
+func CompressTimeDiffs(timeDiffs []int) []byte {
+	w := &bitWriter{remainingBits: intSize}
+	for _, diff := range timeDiffs {
+		w.writeCompressed(diff)
+	}
+	return w.content()
+}
+
+func DecompressTimeDiffs(compressed []byte, length int) []int {
+	timeDiffs := make([]int, 0, length)
+
+	r := &bitReader{buff: compressed}
+	for range length {
+		timeDiffs = append(timeDiffs, r.readCompressed())
+	}
+
+	return timeDiffs
+}
+
 // node of the Huffman trie.
 type node struct {
 	// There are only two symbols in the alphabet - 0 and 1, therefore two child nodes.
@@ -92,7 +111,7 @@ func makeTrie() *node {
 	return root
 }
 
-// trie (aka prefix tree) is used to speed up Huffman decoding.
+// trie (aka prefix tree) is used for Huffman decoding.
 var trie = makeTrie()
 
 // Entry of the [huffmanCodes] array.

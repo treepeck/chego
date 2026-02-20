@@ -47,3 +47,16 @@ func BenchmarkMakeTrie(b *testing.B) {
 		makeTrie()
 	}
 }
+
+func BenchmarkCompressTimeDiffs(b *testing.B) {
+	for b.Loop() {
+		CompressTimeDiffs([]int{-20, -30, -40, 2, 4, 10, -200, 10})
+	}
+}
+
+func BenchmarkDecompressTimeDiffs(b *testing.B) {
+	for b.Loop() {
+		DecompressTimeDiffs([]byte{0b00101001, 0b01001010, 0b00000111,
+			0b11000001, 0b10111100, 0b10111000, 0b10001000, 0b11000001}, 6)
+	}
+}
