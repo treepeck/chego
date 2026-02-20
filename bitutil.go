@@ -28,6 +28,32 @@ var bitScanLookup = [64]int{
 	44, 24, 15, 8, 23, 7, 6, 5,
 }
 
+// CountBits returns the number of bits set within the bitboard.
+func CountBits(bitboard uint64) (cnt int) {
+	for ; bitboard > 0; cnt++ {
+		bitboard &= bitboard - 1
+	}
+	return cnt
+}
+
+// bitScan returns the index of the LSB withing the bitboard.
+// (bitboard & -bitboard) gives the LSB which is then run through the hashing
+// scheme to index a lookup.
+//
+// NOTE: bitScan returns 63 for the empty bitboard.
+func bitScan(bitboard uint64) int {
+	return bitScanLookup[bitboard&-bitboard*bitScanMagic>>58]
+}
+
+// popLSB removes the LSB from the bitboard and returns its index.
+//
+// NOTE: popLSB returns 63 for the empty bitboard.
+func popLSB(bitboard *uint64) int {
+	lsb := bitScan(*bitboard)
+	*bitboard &= *bitboard - 1
+	return lsb
+}
+
 // bitWriter writes and stores the bit set (aka bit array) of arbitrary size.
 type bitWriter struct {
 	buff bytes.Buffer
@@ -54,6 +80,40 @@ func (bw *bitWriter) write(data uint, size int) {
 		}
 		bw.remainingBits += intSize
 		bw.temp = data << bw.remainingBits
+	}
+}
+
+// writeCompressed writes an unsigned integer in compressed chunks.
+//
+// If n fits in 5 bits, all of them are written at once, along with a 6th
+// continuation bit set to 0.
+//
+// If n is larger than 5 bits, the first 5 bits are written with the 6th
+// continuation bit set to 1. The remaining bits of n are then split into
+// 3-bit chunks. Each chunk is written as 4 bits, with the 4th bit acting
+// as a continuation flag indicating whether more chunks follow.
+//
+// Do not mix [bitWriter.write] and [bitWriter.writeCompressed] calls. They are
+// intended for different purposes:
+//   - [bitWriter.write] is for move encoding;
+//   - [bitWriter.writeCompressed] is for clock compression.
+//
+// To prevent a large number of bits being used for negative numbers,
+// n is encoded using zigzag encoding.
+func (bw *bitWriter) writeCompressed(n int) {
+	n = (n >> (intSize - 1)) ^ (n << 1)
+
+	if n & ^0x1F == 0 {
+		bw.write(uint(n), 6)
+	} else {
+		bw.write(uint(n|0x20)&(1<<6-1), 6)
+		n >>= 5
+
+		for n & ^7 != 0 {
+			bw.write(uint(n|8)&(1<<4-1), 4)
+			n >>= 3
+		}
+		bw.write(uint(n), 4)
 	}
 }
 
@@ -111,28 +171,29 @@ func (br *bitReader) read(size int) uint {
 	return res<<need | br.read(need)
 }
 
-// CountBits returns the number of bits set within the bitboard.
-func CountBits(bitboard uint64) (cnt int) {
-	for ; bitboard > 0; cnt++ {
-		bitboard &= bitboard - 1
+// readCompressed reads the unsigned integer from the internal buffer.
+//
+// Do not mix [bitReader.read] and [bitReader.readCompressed] calls. They are
+// intended for different purposes:
+//   - [bitReader.read] is for move decoding;
+//   - [bitReader.readCompressed] is for clock decompression.
+func (br *bitReader) readCompressed() int {
+	n := br.read(6)
+	// Keep on reading if the continuation bit is set.
+	if n&0x20 != 0 {
+		// Reset continuation bit.
+		n &= 0x1F
+		// Read remaining 4-bit chunks.
+		i := 5
+		for {
+			chunk := br.read(4)
+			n |= chunk & 7 << i
+			i += 3
+			if chunk&8 == 0 {
+				break
+			}
+		}
 	}
-	return cnt
-}
-
-// bitScan returns the index of the LSB withing the bitboard.
-// (bitboard & -bitboard) gives the LSB which is then run through the hashing
-// scheme to index a lookup.
-//
-// NOTE: bitScan returns 63 for the empty bitboard.
-func bitScan(bitboard uint64) int {
-	return bitScanLookup[bitboard&-bitboard*bitScanMagic>>58]
-}
-
-// popLSB removes the LSB from the bitboard and returns its index.
-//
-// NOTE: popLSB returns 63 for the empty bitboard.
-func popLSB(bitboard *uint64) int {
-	lsb := bitScan(*bitboard)
-	*bitboard &= *bitboard - 1
-	return lsb
+	// Return zigzag decoded number.
+	return int(n>>1) ^ -int(n&1)
 }

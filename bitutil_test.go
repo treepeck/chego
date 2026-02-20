@@ -38,6 +38,24 @@ func TestBitWriter(t *testing.T) {
 	}
 }
 
+func TestWriteCompressed(t *testing.T) {
+	bw := &bitWriter{remainingBits: intSize}
+
+	for _, n := range []int{5, 10, 20, 30, -40, 12300} {
+		bw.writeCompressed(n)
+	}
+
+	expected := []byte{
+		0b00101001, 0b01001010, 0b00000111, 0b11000001, 0b10111100, 0b10111000,
+		0b10001000, 0b11000001,
+	}
+	for i, b := range bw.content() {
+		if expected[i] != b {
+			t.Fatalf("Expected %b, got %b", expected[i], b)
+		}
+	}
+}
+
 func TestBitReader(t *testing.T) {
 	testcases := []struct {
 		input     []byte
@@ -75,6 +93,25 @@ func TestBitReader(t *testing.T) {
 
 		if got.String() != tc.expected {
 			t.Fatalf("case %d: expected: %v, got: %v", i, tc.expected, got.String())
+		}
+	}
+}
+
+func TestReadCompressed(t *testing.T) {
+	br := &bitReader{buff: []byte{
+		0b00101001, 0b01001010, 0b00000111, 0b11000001, 0b10111100, 0b10111000,
+		0b10001000, 0b11000001,
+	}}
+
+	var got []int
+	for range 6 {
+		got = append(got, br.readCompressed())
+	}
+
+	expected := []int{5, 10, 20, 30, -40, 12300}
+	for i, n := range expected {
+		if got[i] != n {
+			t.Fatalf("expected: %d, got: %d", n, got[i])
 		}
 	}
 }
