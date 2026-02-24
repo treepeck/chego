@@ -16,6 +16,7 @@ func HuffmanEncoding(indices []byte) []byte {
 type DecodedMove struct {
 	Move Move
 	San  string
+	Fen  string
 }
 
 // HuffmanDecoding decodes the given legal moves.
@@ -46,6 +47,7 @@ func HuffmanDecoding(encoded []byte, length int) []DecodedMove {
 		decoded = append(decoded, DecodedMove{
 			Move: m,
 			San:  Move2SAN(m, &p, &l),
+			Fen:  SerializeBitboards(p.Bitboards),
 		})
 	}
 

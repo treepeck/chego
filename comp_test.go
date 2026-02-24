@@ -27,10 +27,10 @@ func TestHuffmanDecoding(t *testing.T) {
 	}
 
 	expected := []DecodedMove{
-		{NewMove(SE4, SE2, MoveNormal), "e4"},
-		{NewMove(SE5, SE7, MoveNormal), "e5"},
-		{NewMove(SC4, SF1, MoveNormal), "Bc4"},
-		{NewMove(SF6, SG8, MoveNormal), "Nf6"},
+		{NewMove(SE4, SE2, MoveNormal), "e4", "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR"},
+		{NewMove(SE5, SE7, MoveNormal), "e5", "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR"},
+		{NewMove(SC4, SF1, MoveNormal), "Bc4", "rnbqkbnr/pppp1ppp/8/4p3/2B1P3/8/PPPP1PPP/RNBQK1NR"},
+		{NewMove(SF6, SG8, MoveNormal), "Nf6", "rnbqkb1r/pppp1ppp/5n2/4p3/2B1P3/8/PPPP1PPP/RNBQK1NR"},
 	}
 
 	got := HuffmanDecoding(w.content(), len(indices))
