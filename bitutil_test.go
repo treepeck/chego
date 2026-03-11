@@ -57,7 +57,7 @@ func TestWriteCompressed(t *testing.T) {
 }
 
 func TestBitReader(t *testing.T) {
-	testcases := []struct {
+	cases := []struct {
 		input     []byte
 		chunkSize int
 		expected  string
@@ -83,7 +83,7 @@ func TestBitReader(t *testing.T) {
 		},
 	}
 
-	for i, tc := range testcases {
+	for i, tc := range cases {
 		br := &bitReader{buff: tc.input}
 
 		var got strings.Builder

@@ -5,7 +5,7 @@ import (
 )
 
 func TestIsThreefoldRepetition(t *testing.T) {
-	testcases := []struct {
+	cases := []struct {
 		moveStack []Move
 		expected  bool
 	}{
@@ -90,7 +90,7 @@ func TestIsThreefoldRepetition(t *testing.T) {
 		}, true},
 	}
 
-	for i, tc := range testcases {
+	for i, tc := range cases {
 		g := NewGame()
 
 		for _, move := range tc.moveStack {
@@ -105,7 +105,7 @@ func TestIsThreefoldRepetition(t *testing.T) {
 }
 
 func TestIsInsufficientMaterial(t *testing.T) {
-	testcases := []struct {
+	cases := []struct {
 		fen      string
 		expected bool
 	}{
@@ -120,7 +120,7 @@ func TestIsInsufficientMaterial(t *testing.T) {
 	}
 
 	game := NewGame()
-	for _, tc := range testcases {
+	for _, tc := range cases {
 		game.Position.Bitboards = ParseBitboards(tc.fen)
 
 		got := game.IsInsufficientMaterial()
@@ -131,7 +131,7 @@ func TestIsInsufficientMaterial(t *testing.T) {
 }
 
 func TestIsCheckmate(t *testing.T) {
-	testcases := []struct {
+	cases := []struct {
 		fenString string
 		expected  bool
 	}{
@@ -141,7 +141,7 @@ func TestIsCheckmate(t *testing.T) {
 	}
 
 	game := NewGame()
-	for _, tc := range testcases {
+	for _, tc := range cases {
 		game.Position = ParseFEN(tc.fenString)
 		GenLegalMoves(game.Position, &game.LegalMoves)
 

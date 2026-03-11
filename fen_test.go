@@ -5,7 +5,7 @@ import (
 )
 
 func TestParseBitboards(t *testing.T) {
-	testcases := []struct {
+	cases := []struct {
 		name     string
 		fen      string
 		expected [15]uint64
@@ -31,7 +31,7 @@ func TestParseBitboards(t *testing.T) {
 		},
 	}
 
-	for _, tc := range testcases {
+	for _, tc := range cases {
 		bitboards := ParseBitboards(tc.fen)
 		for piece, bitboard := range bitboards {
 			if tc.expected[piece] != bitboard {
@@ -42,7 +42,7 @@ func TestParseBitboards(t *testing.T) {
 }
 
 func TestSerializeBitboards(t *testing.T) {
-	testcases := []struct {
+	cases := []struct {
 		name      string
 		bitboards [15]uint64
 		expected  string
@@ -65,7 +65,7 @@ func TestSerializeBitboards(t *testing.T) {
 		},
 	}
 
-	for _, tc := range testcases {
+	for _, tc := range cases {
 		got := SerializeBitboards(tc.bitboards)
 		if tc.expected != got {
 			t.Fatalf("expected %s\ngot %s", tc.expected, got)
@@ -76,7 +76,7 @@ func TestSerializeBitboards(t *testing.T) {
 // TestParseFEN does not check the parsed bitboards, since that is the job
 // of TestParseBitboards
 func TestParseFEN(t *testing.T) {
-	testcases := []struct {
+	cases := []struct {
 		fen      string
 		expected Position
 	}{
@@ -102,7 +102,7 @@ func TestParseFEN(t *testing.T) {
 		},
 	}
 
-	for _, tc := range testcases {
+	for _, tc := range cases {
 		p := ParseFEN(tc.fen)
 		tc.expected.Bitboards = p.Bitboards
 
@@ -115,7 +115,7 @@ func TestParseFEN(t *testing.T) {
 // TestSerializeFEN does not check the serialized bitboards, since that is the job
 // of TestSerializeBitboards.
 func TestSerializeFEN(t *testing.T) {
-	testcases := []struct {
+	cases := []struct {
 		position Position
 		expected string
 	}{
@@ -136,7 +136,7 @@ func TestSerializeFEN(t *testing.T) {
 		}, "4k3/8/8/8/8/3P4/2K5/8 w - - 0 64"},
 	}
 
-	for _, tc := range testcases {
+	for _, tc := range cases {
 		got := SerializeFEN(tc.position)
 
 		if got != tc.expected {

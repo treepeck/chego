@@ -3,7 +3,7 @@ package chego
 import "testing"
 
 func TestMove2SAN(t *testing.T) {
-	testcases := []struct {
+	cases := []struct {
 		move     Move
 		pos      Position
 		expected string
@@ -52,7 +52,7 @@ func TestMove2SAN(t *testing.T) {
 		},
 	}
 
-	for _, tc := range testcases {
+	for _, tc := range cases {
 		var legalMoves MoveList
 		GenLegalMoves(tc.pos, &legalMoves)
 

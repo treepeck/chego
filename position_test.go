@@ -3,7 +3,7 @@ package chego
 import "testing"
 
 func TestMakeMove(t *testing.T) {
-	testcases := []struct {
+	cases := []struct {
 		name     string
 		fenStr   string
 		expected string
@@ -79,7 +79,7 @@ func TestMakeMove(t *testing.T) {
 		},
 	}
 
-	for _, tc := range testcases {
+	for _, tc := range cases {
 		pos := ParseFEN(tc.fenStr)
 		pos.MakeMove(tc.move, tc.moved, tc.captured)
 
