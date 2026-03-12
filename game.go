@@ -5,23 +5,23 @@ package chego
 // PlayedMove represents the played chess move.
 type PlayedMove struct {
 	// Standard Algebraic Notation.
-	San string `json:"san"`
+	San string `json:"s"`
 	// Forsyth-Edwards Notation. Describes the [Position] after played move.
-	Fen string `json:"fen"`
+	Fen string `json:"f"`
 }
 
 // Game represents the state of a chess game.
 //
 // Methods are not safe for concurrent use.
 type Game struct {
-	Played   []PlayedMove
-	Legal    *MoveList
-	Position *Position
+	Played   []PlayedMove `json:"p"`
+	Legal    *MoveList    `json:"l"`
+	Position *Position    `json:"-"`
 	// Repetition keys are stored as a map of Zobrist keys to the number of
 	// times each Position has occurred.
 	repetitions map[uint64]int
-	Result      Result
-	Termination Termination
+	Result      Result      `json:"r"`
+	Termination Termination `json:"t"`
 }
 
 // NewGame initializes [Game] fields and generates legal moves on the [InitialPos].
