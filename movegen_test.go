@@ -5,61 +5,61 @@ import (
 )
 
 func BenchmarkGenPawnAttacks(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		genPawnAttacks(B4, ColorWhite)
 	}
 }
 
 func BenchmarkGenKnightAttacks(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		genKnightAttacks(B4)
 	}
 }
 
 func BenchmarkGenKingAttakcs(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		genKingAttacks(B4)
 	}
 }
 
 func BenchmarkGenBishopAttacks(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		genBishopAttacks(D5, B3)
 	}
 }
 
 func BenchmarkGenRookAttacks(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		genRookAttacks(D5, B3)
 	}
 }
 
 func BenchmarkInitBishopOccupancy(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		initBishopOccupancy()
 	}
 }
 
 func BenchmarkInitRookOccupancy(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		initRookOccupancy()
 	}
 }
 
 func BenchmarkLookupBishopAttacks(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		lookupBishopAttacks(35, 0x0)
 	}
 }
 
 func BenchmarkLookupRookAttacks(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		lookupRookAttacks(35, 0x0)
 	}
 }
 
 func BenchmarkLookupQueenAttacks(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		lookupQueenAttacks(35, 0x0)
 	}
 }

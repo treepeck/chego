@@ -9,8 +9,8 @@ package chego
 // function, so the user must ensure that time ticks and moves are not handled
 // concurrently (prevent race conditions).
 type Game struct {
-	LegalMoves MoveList
-	Position   Position
+	LegalMoves *MoveList
+	Position   *Position
 	// Repetition keys are stored as a map of Zobrist keys to the number of
 	// times each Position has occurred.
 	repetitions map[uint64]int
@@ -22,14 +22,16 @@ type Game struct {
 }
 
 func NewGame() *Game {
+	p := ParseFEN(InitialPos)
 	g := &Game{
-		Position:    ParseFEN(InitialPos),
+		Position:    &p,
+		LegalMoves:  &MoveList{},
 		repetitions: make(map[uint64]int, 1),
 		Result:      Unknown,
 		Termination: Unterminated,
 	}
 
-	GenLegalMoves(g.Position, &g.LegalMoves)
+	GenLegalMoves(*g.Position, g.LegalMoves)
 
 	// Initialize Zobrist key for the initial position.
 	g.repetitions[g.Position.zobristKey()] = 1
@@ -55,7 +57,7 @@ func (g *Game) PushMove(m Move) string {
 	// Encode the move in the Standard Algebraic Notation.  Note that the check
 	// and checkmate sybmols must be added later.
 	// Move2SAN also perform the move and generates legal moves for next turn.
-	san := Move2SAN(m, &g.Position, &g.LegalMoves)
+	san := Move2SAN(m, g.Position, g.LegalMoves)
 
 	// Clear the repetitions map after applying the irreversable move.
 	// See https://www.chessprogramming.org/Irreversible_Moves
