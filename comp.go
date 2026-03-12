@@ -25,9 +25,9 @@ func HuffmanDecoding(encoded []byte, length int) []DecodedMove {
 
 	r := bitReader{buff: encoded}
 
-	p := ParseFEN(InitialPos)
+	p := ParseFen(InitialPos)
 	var l MoveList
-	GenLegalMoves(p, &l)
+	GenLegalMoves(*p, &l)
 
 	for range length {
 		// No valid Huffman code is a prefix of another Huffman code.
@@ -46,7 +46,7 @@ func HuffmanDecoding(encoded []byte, length int) []DecodedMove {
 		m := l.Moves[n.index]
 		decoded = append(decoded, DecodedMove{
 			Move: m,
-			San:  Move2SAN(m, &p, &l),
+			San:  Move2SAN(m, p, &l),
 			Fen:  SerializeBitboards(p.Bitboards),
 		})
 	}

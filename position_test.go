@@ -80,10 +80,10 @@ func TestMakeMove(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		pos := ParseFEN(tc.fenStr)
+		pos := ParseFen(tc.fenStr)
 		pos.MakeMove(tc.move, tc.moved, tc.captured)
 
-		got := SerializeFEN(pos)
+		got := SerializeFen(pos)
 		if got != tc.expected {
 			t.Fatalf("test \"%s\" failed: expected %s got %s", tc.name, tc.expected, got)
 		}
@@ -91,7 +91,7 @@ func TestMakeMove(t *testing.T) {
 }
 
 func BenchmarkMakeMove(b *testing.B) {
-	before := ParseFEN("rnbqkbnr/pppppppp/8/8/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 1")
+	before := ParseFen("rnbqkbnr/pppppppp/8/8/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 1")
 
 	for b.Loop() {
 		pos := before
@@ -100,7 +100,7 @@ func BenchmarkMakeMove(b *testing.B) {
 }
 
 func BenchmarkZobristKey(b *testing.B) {
-	p := ParseFEN("rnbqkbnr/pppppppp/8/8/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 1")
+	p := ParseFen("rnbqkbnr/pppppppp/8/8/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 1")
 
 	for b.Loop() {
 		p.zobristKey()

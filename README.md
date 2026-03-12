@@ -26,10 +26,10 @@ import (
 func main() {
 	g := chego.NewGame()
 	// Scholar's mate.
-	g.PushMove(chego.NewMove(chego.SF3, chego.SF2, chego.MoveNormal))
-	g.PushMove(chego.NewMove(chego.SE5, chego.SE7, chego.MoveNormal))
-	g.PushMove(chego.NewMove(chego.SG4, chego.SG2, chego.MoveNormal))
-	g.PushMove(chego.NewMove(chego.SH4, chego.SD8, chego.MoveNormal))
+	g.Push(chego.NewMove(chego.SF3, chego.SF2, chego.MoveNormal))
+	g.Push(chego.NewMove(chego.SE5, chego.SE7, chego.MoveNormal))
+	g.Push(chego.NewMove(chego.SG4, chego.SG2, chego.MoveNormal))
+	g.Push(chego.NewMove(chego.SH4, chego.SD8, chego.MoveNormal))
  	// Prints "Is checkmate: true"
 	fmt.Printf("Is checkmate: %t\n", g.IsCheckmate())
 }

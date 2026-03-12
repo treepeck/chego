@@ -169,9 +169,9 @@ func (g *generator) processGame() {
 			return
 		}
 
-		pos := chego.ParseFEN(chego.InitialPos)
+		pos := chego.ParseFen(chego.InitialPos)
 		ml := chego.MoveList{}
-		chego.GenLegalMoves(pos, &ml)
+		chego.GenLegalMoves(*pos, &ml)
 
 		for token := range strings.SplitSeq(movetext, " ") {
 			prev := pos
@@ -182,7 +182,7 @@ func (g *generator) processGame() {
 				pos = prev
 				ml = cml
 
-				if chego.Move2SAN(ml.Moves[i], &pos, &ml) == token {
+				if chego.Move2SAN(ml.Moves[i], pos, &ml) == token {
 					g.Lock()
 					g.results[i]++
 					hasMatched = true

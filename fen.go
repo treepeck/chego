@@ -27,10 +27,10 @@ var (
 	}
 )
 
-// ParseFEN parses the given FEN string into a [Position].  It's the caller's
-// responsibility to validate the provided FEN string.
+// ParseFen parses the given FEN string into a [Position].
+// It's the caller's responsibility to validate fen.
 //
-// Each FEN string consists of six parts, separated by a space:
+// fen must have six parts, separated by a space:
 //  1. Piece placement: will be parsed into the array of bitboards.
 //  2. Active color:
 //     "w" means that White is to move;
@@ -41,7 +41,9 @@ var (
 //     this field uses the character "-".
 //  5. Halfmove clock: used for the fifty-move rule.
 //  6. Fullmove number: The number of the full moves.
-func ParseFEN(fen string) (p Position) {
+func ParseFen(fen string) *Position {
+	var p Position
+
 	// Separate FEN fields.
 	fields := strings.SplitN(fen, " ", 6)
 
@@ -88,12 +90,12 @@ func ParseFEN(fen string) (p Position) {
 		panic("cannot parse fullmove counter from FEN string")
 	}
 
-	return p
+	return &p
 }
 
-// SerializeFEN serializes the specified [Position] into a FEN string.  It's
-// the caller's responsibility to validate the provided position.
-func SerializeFEN(p Position) string {
+// SerializeFen serializes the specified [Position] into a FEN string.
+// It's the caller's responsibility to validate p.
+func SerializeFen(p *Position) string {
 	var fen strings.Builder
 	fen.Grow(64)
 

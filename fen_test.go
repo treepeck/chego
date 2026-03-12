@@ -103,10 +103,10 @@ func TestParseFEN(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		p := ParseFEN(tc.fen)
+		p := ParseFen(tc.fen)
 		tc.expected.Bitboards = p.Bitboards
 
-		if p != tc.expected {
+		if *p != tc.expected {
 			t.Fatalf("expected %v\ngot %v", tc.expected, p)
 		}
 	}
@@ -137,7 +137,7 @@ func TestSerializeFEN(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		got := SerializeFEN(tc.position)
+		got := SerializeFen(&tc.position)
 
 		if got != tc.expected {
 			t.Fatalf("expected \"%s\", got \"%s\"", tc.expected, got)
@@ -146,13 +146,13 @@ func TestSerializeFEN(t *testing.T) {
 }
 
 func BenchmarkParseBitboards(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		ParseBitboards("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR")
 	}
 }
 
 func BenchmarkSerializeBitboards(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		SerializeBitboards([15]uint64{
 			0xFF00, 0x42, 0x24, 0x81, 0x8, 0x10,
 			0xFF000000000000, 0x4200000000000000, 0x2400000000000000,
@@ -162,22 +162,24 @@ func BenchmarkSerializeBitboards(b *testing.B) {
 }
 
 func BenchmarkParseFEN(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		ParseFEN("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1")
+	for b.Loop() {
+		ParseFen("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1")
 	}
 }
 
 func BenchmarkSerializeFEN(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		SerializeFEN(Position{
-			Bitboards: [15]uint64{
-				0xFF00, 0x42, 0x24, 0x81, 0x8, 0x10,
-				0xFF000000000000, 0x4200000000000000, 0x2400000000000000,
-				0x8100000000000000, 0x800000000000000, 0x1000000000000000,
-			},
-			ActiveColor:    ColorWhite,
-			CastlingRights: 0xF,
-			FullmoveCnt:    1,
-		})
+	p := &Position{
+		Bitboards: [15]uint64{
+			0xFF00, 0x42, 0x24, 0x81, 0x8, 0x10,
+			0xFF000000000000, 0x4200000000000000, 0x2400000000000000,
+			0x8100000000000000, 0x800000000000000, 0x1000000000000000,
+		},
+		ActiveColor:    ColorWhite,
+		CastlingRights: 0xF,
+		FullmoveCnt:    1,
+	}
+
+	for b.Loop() {
+		SerializeFen(p)
 	}
 }

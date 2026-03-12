@@ -94,7 +94,7 @@ func TestIsThreefoldRepetition(t *testing.T) {
 		g := NewGame()
 
 		for _, move := range tc.moveStack {
-			g.PushMove(move)
+			g.Push(move)
 		}
 
 		got := g.IsThreefoldRepetition()
@@ -142,9 +142,8 @@ func TestIsCheckmate(t *testing.T) {
 
 	game := NewGame()
 	for _, tc := range cases {
-		p := ParseFEN(tc.fenString)
-		game.Position = &p
-		GenLegalMoves(p, game.LegalMoves)
+		game.Position = ParseFen(tc.fenString)
+		GenLegalMoves(*game.Position, game.Legal)
 
 		got := game.IsCheckmate()
 		if got != tc.expected {
@@ -153,15 +152,14 @@ func TestIsCheckmate(t *testing.T) {
 	}
 }
 
-func BenchmarkPushMove(b *testing.B) {
+func BenchmarkPush(b *testing.B) {
 	game := NewGame()
-	pos := ParseFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+	pos := ParseFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
 
-	var v Position
 	for b.Loop() {
-		v = pos
+		v := *pos
 		game.Position = &v
-		game.PushMove(NewMove(SE4, SE2, MoveNormal))
+		game.Push(NewMove(SE4, SE2, MoveNormal))
 	}
 }
 
@@ -188,8 +186,8 @@ func BenchmarkIsThreefoldRepetition(b *testing.B) {
 	}
 
 	for i, move := range moveStack {
-		game.PushMove(move)
-		GenLegalMoves(*game.Position, game.LegalMoves)
+		game.Push(move)
+		GenLegalMoves(*game.Position, game.Legal)
 		if i < len(moveStack)-1 {
 			game.repetitions[game.Position.zobristKey()]++
 		}

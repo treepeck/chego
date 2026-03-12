@@ -1,63 +1,56 @@
-// game.go impements chess game state management.
+// game.go impements chess game management.
 
 package chego
 
+// PlayedMove represents the played chess move.
+type PlayedMove struct {
+	// Standard Algebraic Notation.
+	San string `json:"san"`
+	// Forsyth-Edwards Notation. Describes the [Position] after played move.
+	Fen string `json:"fen"`
+}
+
 // Game represents the state of a chess game.
 //
-// It's the user's responsibility to spin up a time.Ticker and handle time ticks.
-// The value of timeBonus is added to the player's timer during the [PushMove]
-// function, so the user must ensure that time ticks and moves are not handled
-// concurrently (prevent race conditions).
+// Methods are not safe for concurrent use.
 type Game struct {
-	LegalMoves *MoveList
-	Position   *Position
+	Played   []PlayedMove
+	Legal    *MoveList
+	Position *Position
 	// Repetition keys are stored as a map of Zobrist keys to the number of
 	// times each Position has occurred.
 	repetitions map[uint64]int
 	Result      Result
 	Termination Termination
-	WhiteTime   int
-	BlackTime   int
-	TimeBonus   int
 }
 
+// NewGame initializes [Game] fields and generates legal moves on the [InitialPos].
 func NewGame() *Game {
-	p := ParseFEN(InitialPos)
 	g := &Game{
-		Position:    &p,
-		LegalMoves:  &MoveList{},
+		Played:      make([]PlayedMove, 0),
+		Position:    ParseFen(InitialPos),
+		Legal:       &MoveList{},
 		repetitions: make(map[uint64]int, 1),
 		Result:      Unknown,
 		Termination: Unterminated,
 	}
-
-	GenLegalMoves(*g.Position, g.LegalMoves)
-
+	GenLegalMoves(*g.Position, g.Legal)
 	// Initialize Zobrist key for the initial position.
 	g.repetitions[g.Position.zobristKey()] = 1
-
 	return g
 }
 
-// PushMove updates the game state by performing the specified move and returns
-// its Standard Algebraic Notation.  It's a caller's responsibility to ensure
-// that the specified move is legal.  Not safe for concurrent use.
-func (g *Game) PushMove(m Move) string {
+// Push updates the [Game] by performing [Move] with specified index in legal
+// [MoveList]. It's the caller's responsibility to validate m.
+//
+// Game [Result] and [Termination] will not be modified.
+func (g *Game) Push(m Move) {
 	moved := g.Position.GetPieceFromSquare(1 << m.From())
 	captured := g.Position.GetPieceFromSquare(1 << m.To())
 	isCapture := captured != PieceNone
 
-	// Add time bonus to player's clock.
-	if g.Position.ActiveColor == ColorWhite {
-		g.WhiteTime += g.TimeBonus
-	} else {
-		g.BlackTime += g.TimeBonus
-	}
-
-	// Encode the move in the Standard Algebraic Notation.  Note that the check
-	// and checkmate sybmols must be added later.
-	// Move2SAN also perform the move and generates legal moves for next turn.
-	san := Move2SAN(m, g.Position, g.LegalMoves)
+	// Move2SAN updates the position and generates legal moves for next turn.
+	san := Move2SAN(m, g.Position, g.Legal)
 
 	// Clear the repetitions map after applying the irreversable move.
 	// See https://www.chessprogramming.org/Irreversible_Moves
@@ -67,10 +60,30 @@ func (g *Game) PushMove(m Move) string {
 	}
 
 	// Increment the repitition key entry.
-	// TODO: optimize by updating the hash incrementally.
 	g.repetitions[g.Position.zobristKey()]++
 
-	return san
+	// Store played move.
+	g.Played = append(g.Played, PlayedMove{
+		San: san,
+		Fen: SerializeFen(g.Position),
+	})
+}
+
+// Pop discards the last pushed move and restores the [Game] state.
+func (g *Game) Pop() {
+	if len(g.Played) == 0 {
+		return
+	}
+
+	// Decrement the repetition key entry.
+	g.repetitions[g.Position.zobristKey()]--
+
+	m := g.Played[len(g.Played)-1]
+	g.Played = g.Played[:len(g.Played)-1]
+
+	g.Position = ParseFen(m.Fen)
+
+	GenLegalMoves(*g.Position, g.Legal)
 }
 
 // IsThreefoldRepetition checks whether the game has reached a threefold repetition.
@@ -101,7 +114,6 @@ func (g *Game) IsInsufficientMaterial() bool {
 	// Bitmask for all dark squares.
 	dark := uint64(0xAA55AA55AA55AA55)
 	material := g.Position.calculateMaterial()
-
 	if material == 0 || (material == 3 && g.Position.Bitboards[WPawn] == 0 &&
 		g.Position.Bitboards[BPawn] == 0) {
 		return true
@@ -129,26 +141,18 @@ func (g *Game) IsInsufficientMaterial() bool {
 // is a stalemate.
 func (g *Game) IsCheckmate() bool {
 	return GenChecksCounter(g.Position.Bitboards, 1^g.Position.ActiveColor) > 0 &&
-		g.LegalMoves.LastMoveIndex == 0
+		g.Legal.LastMoveIndex == 0
 }
 
 // IsMoveLegal checks if the specified move is legal by comparing it with moves,
-// stored in the LegalMoves field.
+// stored in the Legal field.
 func (g *Game) IsMoveLegal(m Move) bool {
-	for i := range g.LegalMoves.LastMoveIndex {
-		lm := g.LegalMoves.Moves[i]
+	for i := range g.Legal.LastMoveIndex {
+		lm := g.Legal.Moves[i]
 		if lm.From() == m.From() && lm.To() == m.To() && lm.Type() == m.Type() &&
 			lm.PromoPiece() == m.PromoPiece() {
 			return true
 		}
 	}
 	return false
-}
-
-// SetClock sets the players’ remaining time and increment (bonus) values.  It
-// expects these values to be specified in seconds.
-func (g *Game) SetClock(control, bonus int) {
-	g.WhiteTime = control
-	g.BlackTime = control
-	g.TimeBonus = bonus
 }

@@ -156,14 +156,14 @@ func main() {
 	r := &result{}
 
 	fen := chego.InitialPos
-	p := chego.ParseFEN(fen)
+	p := chego.ParseFen(fen)
 
 	start := time.Now()
 	defer func() {
 		elapsed := time.Since(start)
 
 		if *verbose {
-			fmt.Printf("\nRoot position:\n%s\n\n\t%s\n\n", position(p), fen)
+			fmt.Printf("\nRoot position:\n%s\n\n\t%s\n\n", position(*p), fen)
 			fmt.Printf("\t%d\t%d\t\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t",
 				*depth,
 				r.nodes,
@@ -201,9 +201,9 @@ func main() {
 	}
 
 	if *verbose {
-		r.nodes = perftVerbose(p, *depth, r, true)
+		r.nodes = perftVerbose(*p, *depth, r, true)
 	} else {
-		r.nodes = perft(p, *depth)
+		r.nodes = perft(*p, *depth)
 	}
 }
 
