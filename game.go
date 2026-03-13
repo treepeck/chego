@@ -67,6 +67,23 @@ func (g *Game) Push(m Move) {
 		San: san,
 		Fen: SerializeFen(g.Position),
 	})
+
+	// Terminate the game according to the rules of chess.
+	if g.IsCheckmate() {
+		if len(g.Played)%2 == 0 {
+			g.Terminate(Checkmate, BlackWon)
+		} else {
+			g.Terminate(Checkmate, WhiteWon)
+		}
+	} else if g.IsInsufficientMaterial() {
+		g.Terminate(InsufficientMaterial, Draw)
+	} else if g.IsThreefoldRepetition() {
+		g.Terminate(ThreefoldRepetition, Draw)
+	} else if g.Legal.LastMoveIndex == 0 {
+		g.Terminate(Stalemate, Draw)
+	} else if g.Position.HalfmoveCnt == 50 {
+		g.Terminate(FiftyMoves, Draw)
+	}
 }
 
 // Pop discards the last pushed move and restores the [Game] state.
@@ -155,4 +172,9 @@ func (g *Game) IsMoveLegal(m Move) bool {
 		}
 	}
 	return false
+}
+
+func (g *Game) Terminate(t Termination, r Result) {
+	g.Termination = t
+	g.Result = r
 }
