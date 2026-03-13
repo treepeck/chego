@@ -14,19 +14,19 @@ type PlayedMove struct {
 //
 // Methods are not safe for concurrent use.
 type Game struct {
-	Played   []PlayedMove `json:"p"`
-	Legal    *MoveList    `json:"l"`
-	Position *Position    `json:"-"`
+	Played      []PlayedMove
+	Legal       *MoveList
+	Position    *Position
+	Result      Result
+	Termination Termination
 	// Repetition keys are stored as a map of Zobrist keys to the number of
 	// times each Position has occurred.
 	repetitions map[uint64]int
-	Result      Result      `json:"r"`
-	Termination Termination `json:"t"`
 }
 
 // NewGame initializes [Game] fields and generates legal moves on the [InitialPos].
-func NewGame() *Game {
-	g := &Game{
+func NewGame() Game {
+	g := Game{
 		Played:      make([]PlayedMove, 0),
 		Position:    ParseFen(InitialPos),
 		Legal:       &MoveList{},
