@@ -12,16 +12,9 @@ func HuffmanEncoding(indices []byte) []byte {
 	return w.content()
 }
 
-// DecodedMove represents the result of Huffman decoding.
-type DecodedMove struct {
-	Move Move
-	San  string
-	Fen  string
-}
-
 // HuffmanDecoding decodes the given legal moves.
-func HuffmanDecoding(encoded []byte, length int) []DecodedMove {
-	decoded := make([]DecodedMove, 0, length)
+func HuffmanDecoding(encoded []byte, length int) []PlayedMove {
+	decoded := make([]PlayedMove, 0, length)
 
 	r := bitReader{buff: encoded}
 
@@ -44,10 +37,9 @@ func HuffmanDecoding(encoded []byte, length int) []DecodedMove {
 		}
 		// Collect results of decoding.
 		m := l.Moves[n.index]
-		decoded = append(decoded, DecodedMove{
-			Move: m,
-			San:  Move2SAN(m, p, &l),
-			Fen:  SerializeBitboards(p.Bitboards),
+		decoded = append(decoded, PlayedMove{
+			San: Move2SAN(m, p, &l),
+			Fen: SerializeBitboards(p.Bitboards),
 		})
 	}
 
