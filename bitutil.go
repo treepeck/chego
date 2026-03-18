@@ -165,7 +165,8 @@ func (br *bitReader) read(size int) uint {
 		br.remainingBits -= size
 		return br.temp >> br.remainingBits & (1<<size - 1)
 	}
-	res := br.temp >> br.remainingBits & (1<<br.remainingBits - 1)
+
+	res := br.temp & (1<<br.remainingBits - 1)
 	need := size - br.remainingBits
 	br.fillTemp()
 	return res<<need | br.read(need)

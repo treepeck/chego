@@ -41,17 +41,19 @@ func TestBitWriter(t *testing.T) {
 func TestWriteCompressed(t *testing.T) {
 	bw := &bitWriter{remainingBits: intSize}
 
-	for _, n := range []int{5, 10, 20, 30, -40, 12300} {
+	for _, n := range []int{-4, -5, -5, -5, -9, -11, -5, -12, -2, -2, -1, -1, -2, -2, -2, -1, -68} {
 		bw.writeCompressed(n)
 	}
 
 	expected := []byte{
-		0b00101001, 0b01001010, 0b00000111, 0b11000001, 0b10111100, 0b10111000,
-		0b10001000, 0b11000001,
+		0x1C, 0x92, 0x49, 0x45, 0x52, 0x57, 0x0C, 0x30,
+		0x41, 0x0C, 0x30, 0xC1, 0x9D, 0x00,
 	}
-	for i, b := range bw.content() {
+	got := bw.content()
+
+	for i, b := range got {
 		if expected[i] != b {
-			t.Fatalf("Expected %b, got %b", expected[i], b)
+			t.Fatalf("Expected %x, got %x", expected, got)
 		}
 	}
 }
@@ -99,19 +101,19 @@ func TestBitReader(t *testing.T) {
 
 func TestReadCompressed(t *testing.T) {
 	br := &bitReader{buff: []byte{
-		0b00101001, 0b01001010, 0b00000111, 0b11000001, 0b10111100, 0b10111000,
-		0b10001000, 0b11000001,
+		0x1C, 0x92, 0x49, 0x45, 0x52, 0x57, 0x0C, 0x30,
+		0x41, 0x0C, 0x30, 0xC1, 0x9D, 0x00,
 	}}
 
 	var got []int
-	for range 6 {
+	for range 17 {
 		got = append(got, br.readCompressed())
 	}
 
-	expected := []int{5, 10, 20, 30, -40, 12300}
+	expected := []int{-4, -5, -5, -5, -9, -11, -5, -12, -2, -2, -1, -1, -2, -2, -2, -1, -68}
 	for i, n := range expected {
 		if got[i] != n {
-			t.Fatalf("expected: %d, got: %d", n, got[i])
+			t.Fatalf("expected: %x, got: %x", n, got[i])
 		}
 	}
 }
