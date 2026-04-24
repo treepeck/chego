@@ -59,7 +59,8 @@ type MoveList struct {
 	// hence 218 elements.
 	// See https://www.talkchess.com/forum/viewtopic.php?t=61792
 	Moves [218]Move
-	// To keep track of the next move index.
+	// To keep track of the next move index. Legal indices are between
+	// 0 (including) and LastMoveIndex (excluding).
 	LastMoveIndex byte
 }
 
