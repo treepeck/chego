@@ -4,8 +4,6 @@
 package chego
 
 const (
-	// For x86-64 CPUs int size is 32 bits. For x64 CPUs int size is 64 bits.
-	intSize = (32 << (^uint(0) >> 63))
 	// Precalculated magic used to form indices for the bitScanLookup array.
 	bitScanMagic uint64 = 0x07EDD5E59A4E28C2
 )
