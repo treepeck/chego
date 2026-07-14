@@ -41,13 +41,13 @@ func perft(p chego.Position, depth int) int {
 	chego.GenLegalMoves(p, &l)
 
 	if depth == 1 {
-		return int(l.LastMoveIndex)
+		return int(l.Len)
 	}
 
 	var prev chego.Position
 	var moved, captured chego.Piece
 
-	for i := range l.LastMoveIndex {
+	for i := range l.Len {
 		prev = p
 		moved = p.GetPieceFromSquare(1 << l.Moves[i].From())
 		captured = p.GetPieceFromSquare(1 << l.Moves[i].To())
@@ -72,14 +72,14 @@ func perftVerbose(p chego.Position, depth int, r *result, isRoot bool) int {
 	chego.GenLegalMoves(p, &l)
 
 	if depth == 1 {
-		return int(l.LastMoveIndex)
+		return int(l.Len)
 	}
 
 	c := p.ActiveColor
 	var prev chego.Position
 	var moved, captured chego.Piece
 
-	for i := range l.LastMoveIndex {
+	for i := range l.Len {
 		if p.GetPieceFromSquare(1<<l.Moves[i].To()) != chego.PieceNone {
 			r.captures++
 		}

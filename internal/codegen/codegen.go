@@ -178,7 +178,7 @@ func (g *generator) processGame() {
 			cml := ml
 			hasMatched := false
 
-			for i := range cml.LastMoveIndex {
+			for i := range cml.Len {
 				pos = prev
 				ml = cml
 

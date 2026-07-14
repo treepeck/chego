@@ -90,12 +90,48 @@ func TestMakeMove(t *testing.T) {
 	}
 }
 
+func TestIsInsufficientMaterial(t *testing.T) {
+	cases := []struct {
+		fen      string
+		expected bool
+	}{
+		{"3k1n2/8/8/8/8/5B2/4K3/8", false},
+		{"3k4/8/8/8/8/8/4K3/8", true},
+		{"3k4/8/8/8/8/5P2/4K3/8", false},
+		{"3k4/2b5/8/8/8/8/4K3/8", true},
+		{"3k4/8/8/8/8/8/3NK3/8", true},
+		{"3k4/2b5/8/8/8/4B3/4K3/8", true},
+		{"3k4/2b5/8/8/8/3B4/4K3/8", false},
+		{"8/8/8/8/8/8/1n6/KN6", true},
+	}
+
+	p := &Position{}
+	for _, tc := range cases {
+		p.Bitboards = ParseBitboards(tc.fen)
+
+		got := p.IsInsufficientMaterial()
+		if got != tc.expected {
+			t.Fatalf("expected: %t, got: %t", tc.expected, got)
+		}
+	}
+}
+
 func BenchmarkMakeMove(b *testing.B) {
 	before := ParseFen("rnbqkbnr/pppppppp/8/8/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 1")
 
 	for b.Loop() {
 		pos := before
 		pos.MakeMove(NewMove(SG1, SE1, MoveCastling), WKing, PieceNone)
+	}
+}
+
+func BenchmarkIsInsufficientMaterial(b *testing.B) {
+	p := &Position{
+		Bitboards: ParseBitboards("3k1n2/8/8/8/8/5B2/4K3/8"),
+	}
+
+	for b.Loop() {
+		p.IsInsufficientMaterial()
 	}
 }
 

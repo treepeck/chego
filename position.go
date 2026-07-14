@@ -146,6 +146,34 @@ func (p *Position) MakeMove(m Move, moved, captured Piece) {
 	p.ActiveColor ^= 1
 }
 
+// IsInsufficientMaterial returns true if one of the following statements is true:
+//   - Both sides have a bare king.
+//   - One side has a king and a minor piece against a bare king.
+//   - Both sides have a king and a bishop, the bishops standing on the same color.
+//   - Both sides have a king and a knight.
+func (p *Position) IsInsufficientMaterial() bool {
+	// Bitmask for all dark squares.
+	dark := uint64(0xAA55AA55AA55AA55)
+	material := p.calculateMaterial()
+	if material == 0 || (material == 3 && p.Bitboards[WPawn] == 0 &&
+		p.Bitboards[BPawn] == 0) {
+		return true
+	}
+
+	if material == 6 {
+		wb := p.Bitboards[WBishop]
+		bb := p.Bitboards[BBishop]
+
+		// If there are two bishops both standing on the same colored squares.
+		return (wb != 0 && bb != 0 && ((wb&dark > 0 && bb&dark > 0) ||
+			(wb&dark == 0 && bb&dark == 0))) ||
+			// Or if there are two knights.
+			(p.Bitboards[WKnight] != 0 &&
+				p.Bitboards[BKnight] != 0)
+	}
+	return false
+}
+
 // GetPieceFromSquare returns the type of the piece that stands on the specified
 // square, or [PieceNone] if the square is empty.
 func (p *Position) GetPieceFromSquare(square uint64) Piece {
@@ -208,7 +236,7 @@ func (p *Position) calculateMaterial() (material int) {
 
 // zobristKey hashes the position into a 64-bit unsigned integer.   This allows
 // positions to be used as lookup keys and stored or compared efficiently.
-func (p Position) zobristKey() (key uint64) {
+func (p *Position) zobristKey() (key uint64) {
 	for i := WPawn; i <= BKing; i++ {
 		for p.Bitboards[i] > 0 {
 			key ^= pieceKeys[i][popLSB(&p.Bitboards[i])]

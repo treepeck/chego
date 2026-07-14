@@ -2,6 +2,11 @@
 
 package chego
 
+type PlayedMove struct {
+	San string `json:"s"`
+	Fen string `json:"f"`
+}
+
 // HuffmanEncoding encodes the list of legal moves by their indices in the [MoveList].
 func HuffmanEncoding(indices []byte) []byte {
 	w := bitWriter{remainingBits: intSize}

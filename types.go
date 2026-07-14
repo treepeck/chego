@@ -70,34 +70,6 @@ const (
 	CastlingBlackLong  CastlingRights = 8
 )
 
-// Result represents the possible outcomes of a chess game.
-type Result int
-
-const (
-	Unknown Result = iota
-	WhiteWon
-	BlackWon
-	Draw
-)
-
-// Termination represents the reason for the conclusion of the game.  While the
-// [Result] types gives the result of the game, it does not provide any extra
-// information and so the Termination type is defined for this purpose.
-type Termination int
-
-const (
-	Unterminated Termination = iota
-	Abandoned
-	Checkmate
-	Stalemate
-	InsufficientMaterial
-	FiftyMoves
-	ThreefoldRepetition
-	Resignation
-	Agreement
-	TimeForfeit
-)
-
 // Bitboards of each square.
 const (
 	A1 uint64 = 1 << iota

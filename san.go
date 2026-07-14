@@ -51,7 +51,7 @@ func Move2SAN(m Move, p *Position, lm *MoveList) string {
 		if moved > BPawn {
 			// Find and store all ambiguities.
 			ambiguities := make([]int, 0)
-			for i := range lm.LastMoveIndex {
+			for i := range lm.Len {
 				if p.GetPieceFromSquare(1<<lm.Moves[i].From()) == moved &&
 					lm.Moves[i].To() == m.To() &&
 					lm.Moves[i].From() != m.From() {
@@ -99,7 +99,7 @@ func Move2SAN(m Move, p *Position, lm *MoveList) string {
 	// If the en passant capture is not possible, clear the en passant target,
 	// since it can break the threefold-repetition detection by corrupting the
 	// Zobrish hash.  See [IsThreefoldRepetition] function commentary.
-	for i := range lm.LastMoveIndex {
+	for i := range lm.Len {
 		if lm.Moves[i].Type() == MoveEnPassant {
 			ep = p.EPTarget
 			break
@@ -111,7 +111,7 @@ func Move2SAN(m Move, p *Position, lm *MoveList) string {
 	isCheck := genAttacks(p.Bitboards, 1^p.ActiveColor)&
 		p.Bitboards[WKing+(p.ActiveColor)] != 0
 
-	if isCheck && lm.LastMoveIndex == 0 {
+	if isCheck && lm.Len == 0 {
 		// If the move results in checkmate, append the '#' symbol to the SAN.
 		b.WriteByte('#')
 	} else if isCheck {
