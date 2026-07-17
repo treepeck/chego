@@ -234,9 +234,9 @@ func (p *Position) calculateMaterial() (material int) {
 	return material
 }
 
-// zobristKey hashes the position into a 64-bit unsigned integer.   This allows
+// ZobristKey hashes the position into a 64-bit unsigned integer.   This allows
 // positions to be used as lookup keys and stored or compared efficiently.
-func (p *Position) zobristKey() (key uint64) {
+func (p *Position) ZobristKey() (key uint64) {
 	for i := WPawn; i <= BKing; i++ {
 		for p.Bitboards[i] > 0 {
 			key ^= pieceKeys[i][popLSB(&p.Bitboards[i])]

@@ -139,6 +139,6 @@ func BenchmarkZobristKey(b *testing.B) {
 	p := ParseFen("rnbqkbnr/pppppppp/8/8/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 1")
 
 	for b.Loop() {
-		p.zobristKey()
+		p.ZobristKey()
 	}
 }
