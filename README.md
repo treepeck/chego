@@ -1,3 +1,9 @@
+# DEPRECATED - JustChess becomes closed source.
+
+### Future updates will not be published. The development itself will remain public and broadcasted on [YouTube](https://www.youtube.com/@treepeck).
+
+---
+
 [![License: MPL 2.0](https://img.shields.io/badge/License-MPL%202.0-brightgreen.svg)](https://opensource.org/licenses/MPL-2.0)
 [![Go Reference](https://pkg.go.dev/badge/github.com/treepeck/chego.svg)](https://pkg.go.dev/github.com/treepeck/chego)
 
